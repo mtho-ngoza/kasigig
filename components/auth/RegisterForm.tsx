@@ -17,6 +17,7 @@ export function RegisterForm() {
     phone: '',
     location: '',
     userType: 'job-seeker',
+    workSector: undefined,
     idNumber: '',
   })
   const [errors, setErrors] = useState<Partial<RegisterData>>({})
@@ -154,6 +155,27 @@ export function RegisterForm() {
           <option value="employer">Employer</option>
         </select>
       </div>
+
+      {formData.userType === 'job-seeker' && (
+        <div className="space-y-1">
+          <label className="block text-sm font-medium text-gray-700">
+            Type of Work <span className="text-gray-500">(Optional)</span>
+          </label>
+          <select
+            name="workSector"
+            value={formData.workSector || ''}
+            onChange={handleChange}
+            className="flex h-10 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+          >
+            <option value="">Choose your work type</option>
+            <option value="professional">Professional Services (IT, Design, Marketing, Writing)</option>
+            <option value="informal">Hands-on Work (Cleaning, Construction, Maintenance, Transport)</option>
+          </select>
+          <p className="text-xs text-gray-600 mt-1">
+            This helps us customize your experience. You can change this later in your profile.
+          </p>
+        </div>
+      )}
 
       <Input
         label="ID Number (Optional)"

@@ -7,6 +7,7 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card'
 import PostGigPage from './gig/PostGigPage'
 import MyApplications from './application/MyApplications'
 import ManageApplications from './application/ManageApplications'
+import ProfileManagement from './profile/ProfileManagement'
 
 interface DashboardProps {
   onBrowseGigs?: () => void
@@ -14,7 +15,7 @@ interface DashboardProps {
 
 export default function Dashboard({ onBrowseGigs }: DashboardProps) {
   const { user, logout } = useAuth()
-  const [currentView, setCurrentView] = useState<'dashboard' | 'post-gig' | 'my-applications' | 'manage-applications'>('dashboard')
+  const [currentView, setCurrentView] = useState<'dashboard' | 'post-gig' | 'my-applications' | 'manage-applications' | 'profile'>('dashboard')
 
   // Show post gig page if user is on that view
   if (currentView === 'post-gig') {
@@ -29,6 +30,11 @@ export default function Dashboard({ onBrowseGigs }: DashboardProps) {
   // Show manage applications page if user is on that view
   if (currentView === 'manage-applications') {
     return <ManageApplications onBack={() => setCurrentView('dashboard')} />
+  }
+
+  // Show profile management page if user is on that view
+  if (currentView === 'profile') {
+    return <ProfileManagement onBack={() => setCurrentView('dashboard')} />
   }
 
   return (
@@ -118,7 +124,13 @@ export default function Dashboard({ onBrowseGigs }: DashboardProps) {
                       >
                         Browse Gigs
                       </Button>
-                      <Button variant="outline" className="w-full">Update Profile</Button>
+                      <Button
+                        variant="outline"
+                        className="w-full"
+                        onClick={() => setCurrentView('profile')}
+                      >
+                        Update Profile
+                      </Button>
                       <Button
                         variant="outline"
                         className="w-full"

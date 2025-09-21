@@ -14,7 +14,8 @@ GigSA bridges the gap between South Africa's digital economy and informal work s
 
 **✅ Full-Featured Gig Economy Platform!**
 - Complete application system with gig posting, applications, and tracking
-- Informal economy accessibility with context-aware forms
+- Comprehensive profile management with portfolio uploads and photo capabilities
+- Context-aware UX that adapts to informal vs professional workers
 - Authentication system working with Firebase
 - Public gig browsing with real-time application functionality
 - Role-based dashboards for job seekers and employers
@@ -56,13 +57,22 @@ GigSA bridges the gap between South Africa's digital economy and informal work s
 - **✅ Optional Fields**: Reduced validation for informal work categories
 - **💡 Smart Tips**: Context-aware application guidance
 
+#### **Profile Management**
+- **👤 Complete Profile System**: Comprehensive user profiles with skills, portfolio, and photo uploads
+- **📸 Profile Photo Upload**: Professional photo upload with Firebase Storage integration
+- **💼 Portfolio Management**: Showcase work with image uploads and project details
+- **🎯 Context-Aware Experience**: Different UX for informal vs professional workers
+- **📋 Skills & Certifications**: Skills management with language support
+- **💰 Experience & Rates**: Set hourly rates, availability, and experience levels
+- **📊 Profile Completeness**: Real-time progress tracking with actionable suggestions
+- **🔧 Work Sector Selection**: Choose work type during signup for immediate context
+
 #### **Demo & Testing**
 - **💾 Demo Data**: 6 realistic South African gigs including cleaning examples
 - **🧪 Test Accounts**: Both job seeker and employer registration flows
 - **📍 SA Locations**: Pre-configured South African cities and remote options
 
 ### 🚧 **Planned Features** (Next Development Phase)
-- **👤 Profile Management**: Detailed user profiles with skills, portfolio, and photo uploads
 - **💬 Messaging System**: Direct communication between employers and job seekers
 - **💳 Payment Integration**: Secure payment processing with escrow for completed work
 - **⭐ Review System**: Rating and feedback system for completed gigs
@@ -81,6 +91,7 @@ GigSA bridges the gap between South Africa's digital economy and informal work s
 - **Styling**: Tailwind CSS v4 with custom theme configuration
 - **Authentication**: Firebase Auth with Firestore user profiles
 - **Database**: Cloud Firestore for scalable data storage
+- **File Storage**: Firebase Storage for photos and portfolio images
 - **State Management**: React Context API
 - **Error Handling**: React Error Boundaries
 - **Development**: Hot reload, TypeScript checking, ESLint
@@ -108,7 +119,9 @@ npm install
    - Create a Firebase project at [console.firebase.google.com](https://console.firebase.google.com)
    - Enable Authentication → Email/Password provider
    - Enable Firestore Database
+   - Enable Firebase Storage for file uploads
    - Add your domain to authorized domains in Authentication settings
+   - Configure Storage CORS for development (see `cors.json` in project root)
 
 4. **Set up environment variables**
 Copy `.env.local.example` to `.env.local` and add your Firebase config:
@@ -143,10 +156,18 @@ npm run dev
 │   ├── auth/                     # Authentication UI
 │   │   ├── AuthPage.tsx          # Login/signup page
 │   │   ├── LoginForm.tsx         # Login form component
-│   │   └── RegisterForm.tsx      # Registration form
+│   │   └── RegisterForm.tsx      # Registration form with work sector selection
 │   ├── gig/                      # Gig management components
 │   │   ├── PostGigForm.tsx       # Context-aware gig posting form
 │   │   └── PostGigPage.tsx       # Gig posting with success flow
+│   ├── profile/                  # Profile management components
+│   │   ├── ProfileManagement.tsx # Main profile management hub
+│   │   ├── BasicInfoForm.tsx     # Personal information and social links
+│   │   ├── ProfilePhotoUpload.tsx # Profile photo upload with guidelines
+│   │   ├── SkillsForm.tsx        # Skills, languages, and certifications
+│   │   ├── PortfolioManager.tsx  # Portfolio management with context-aware categories
+│   │   ├── ExperienceForm.tsx    # Experience, rates, and availability
+│   │   └── ProfileCompleteness.tsx # Progress tracking and suggestions
 │   ├── ui/                       # Reusable UI components
 │   │   ├── Button.tsx            # Custom button component
 │   │   ├── Card.tsx              # Card layout component
@@ -162,8 +183,11 @@ npm run dev
 │   │   └── firebase.ts           # Firebase auth integration
 │   ├── database/                 # Database operations
 │   │   ├── firestore.ts          # Generic Firestore service
-│   │   └── gigService.ts         # Gig and application operations
-│   └── firebase.ts               # Firebase configuration
+│   │   ├── gigService.ts         # Gig and application operations
+│   │   └── profileService.ts     # Profile and file upload operations
+│   ├── utils/                    # Utility functions
+│   │   └── userProfile.ts        # Context-aware profile configuration
+│   └── firebase.ts               # Firebase configuration with Storage
 └── types/                        # TypeScript definitions
     ├── auth.ts                   # Auth-related types
     └── gig.ts                    # Gig and application types
@@ -241,7 +265,6 @@ Ensure environment variables are configured in your deployment platform.
 ## 📋 Remaining TODOs
 
 ### High Priority
-- [ ] **Enhanced profile management** with portfolio uploads and photo
 - [ ] **Firestore security rules** implementation for production
 - [ ] **Real-time messaging** between employers and job seekers
 - [ ] **Payment integration** with escrow for project-based work

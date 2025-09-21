@@ -33,6 +33,7 @@ export class FirebaseAuthService {
         phone: data.phone,
         location: data.location,
         userType: data.userType,
+        workSector: data.workSector,
         idNumber: data.idNumber,
         createdAt: new Date(),
       };

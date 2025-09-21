@@ -9,6 +9,7 @@ interface AuthContextType extends AuthState {
   register: (data: RegisterData) => Promise<{ success: boolean; message: string }>
   logout: () => Promise<void>
   updateUser: (userData: Partial<User>) => Promise<void>
+  refreshUser: () => Promise<void>
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
@@ -95,6 +96,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }
 
+  const refreshUser = async () => {
+    try {
+      const currentUser = await FirebaseAuthService.getCurrentUser()
+      setUser(currentUser)
+    } catch (error) {
+      console.error('Error refreshing user data:', error)
+    }
+  }
+
   const value: AuthContextType = {
     user,
     isLoading,
@@ -102,7 +112,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     login,
     register,
     logout,
-    updateUser
+    updateUser,
+    refreshUser
   }
 
   return (

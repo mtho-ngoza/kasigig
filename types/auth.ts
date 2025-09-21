@@ -6,13 +6,41 @@ export interface User {
   phone: string
   location: string
   userType: 'job-seeker' | 'employer'
+  workSector?: 'professional' | 'informal'
   idNumber?: string
   rating?: number
   completedGigs?: number
   skills?: string[]
   badges?: string[]
   bio?: string
+  profilePhoto?: string
+  portfolio?: PortfolioItem[]
+  experience?: string
+  hourlyRate?: number
+  availability?: string
+  languages?: string[]
+  education?: string
+  certifications?: string[]
+  socialLinks?: {
+    linkedin?: string
+    website?: string
+    github?: string
+  }
+  profileCompleteness?: number
+  isVerified?: boolean
   createdAt: Date
+  updatedAt?: Date
+}
+
+export interface PortfolioItem {
+  id: string
+  title: string
+  description: string
+  imageUrl?: string
+  projectUrl?: string
+  technologies?: string[]
+  category: string
+  completedAt: Date
 }
 
 export interface AuthState {
@@ -35,5 +63,6 @@ export interface RegisterData {
   phone: string
   location: string
   userType: 'job-seeker' | 'employer'
+  workSector?: 'professional' | 'informal'
   idNumber?: string
 }
