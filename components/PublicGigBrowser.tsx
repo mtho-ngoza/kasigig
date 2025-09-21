@@ -3,15 +3,17 @@
 import React, { useState, useEffect } from 'react'
 import { GigService } from '@/lib/database/gigService'
 import { Gig } from '@/types/gig'
+import { User } from '@/types/auth'
 import { Button } from '@/components/ui/Button'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card'
+import ApplicationForm from '@/components/application/ApplicationForm'
 
 interface PublicGigBrowserProps {
   onSignUpClick: () => void
   onLoginClick: () => void
   showAuthButtons?: boolean
   onDashboardClick?: () => void
-  currentUser?: { firstName?: string; lastName?: string; email?: string } | null
+  currentUser?: User | null
 }
 
 export default function PublicGigBrowser({
@@ -25,6 +27,8 @@ export default function PublicGigBrowser({
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedCategory, setSelectedCategory] = useState<string>('')
+  const [selectedGig, setSelectedGig] = useState<Gig | null>(null)
+  const [showApplicationForm, setShowApplicationForm] = useState(false)
 
   const categories = [
     'Technology',
@@ -116,6 +120,22 @@ export default function PublicGigBrowser({
           },
           {
             id: 'demo-5',
+            title: 'Weekly House Cleaning',
+            description: 'Need reliable person for weekly house cleaning in Sandton. 3-bedroom house, must bring own cleaning supplies. Looking for someone trustworthy and thorough.',
+            category: 'Cleaning',
+            location: 'Johannesburg',
+            budget: 600,
+            duration: '1 day',
+            skillsRequired: ['House Cleaning'],
+            employerId: 'employer-5',
+            employerName: 'Johnson Family',
+            status: 'open' as const,
+            applicants: [],
+            createdAt: new Date('2024-09-21'),
+            updatedAt: new Date('2024-09-21')
+          },
+          {
+            id: 'demo-6',
             title: 'Mobile App UI/UX Design',
             description: 'Looking for UI/UX designer to redesign our fitness tracking mobile app. Need modern, intuitive design that encourages user engagement.',
             category: 'Design',
@@ -179,12 +199,59 @@ export default function PublicGigBrowser({
     }).format(amount)
   }
 
-  const formatDate = (date: Date) => {
-    return new Date(date).toLocaleDateString('en-ZA', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric'
-    })
+  const formatDate = (date: Date | unknown) => {
+    try {
+      let dateObj: Date;
+
+      if (date && typeof date === 'object' && 'toDate' in date && typeof (date as { toDate: () => Date }).toDate === 'function') {
+        // Handle Firestore Timestamp
+        dateObj = (date as { toDate: () => Date }).toDate();
+      } else if (date instanceof Date) {
+        dateObj = date;
+      } else if (typeof date === 'string' || typeof date === 'number') {
+        dateObj = new Date(date);
+      } else {
+        return 'N/A';
+      }
+
+      if (isNaN(dateObj.getTime())) {
+        return 'N/A';
+      }
+
+      return dateObj.toLocaleDateString('en-ZA', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric'
+      });
+    } catch {
+      return 'N/A';
+    }
+  }
+
+  const handleApplyClick = (gig: Gig) => {
+    if (!currentUser) {
+      onSignUpClick()
+      return
+    }
+
+    if (currentUser.userType !== 'job-seeker') {
+      alert('Only job seekers can apply for gigs.')
+      return
+    }
+
+    setSelectedGig(gig)
+    setShowApplicationForm(true)
+  }
+
+  const handleApplicationSuccess = () => {
+    setShowApplicationForm(false)
+    setSelectedGig(null)
+    alert('Application submitted successfully! You can track your applications in your dashboard.')
+  }
+
+  const handleApplicationCancel = () => {
+    setShowApplicationForm(false)
+    setSelectedGig(null)
   }
 
   return (
@@ -371,7 +438,7 @@ export default function PublicGigBrowser({
                     </span>
                     <Button
                       size="sm"
-                      onClick={currentUser ? () => alert('Application feature coming soon!') : onSignUpClick}
+                      onClick={() => handleApplyClick(gig)}
                     >
                       {currentUser ? 'Apply' : 'Apply Now'}
                     </Button>
@@ -422,6 +489,31 @@ export default function PublicGigBrowser({
           </div>
         )}
       </section>
+
+      {/* Application Form Modal/Overlay */}
+      {showApplicationForm && selectedGig && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="p-6">
+              <div className="flex justify-between items-center mb-4">
+                <h2 className="text-xl font-semibold">Apply for Gig</h2>
+                <Button
+                  variant="ghost"
+                  onClick={handleApplicationCancel}
+                  className="text-gray-500 hover:text-gray-700"
+                >
+                  ✕
+                </Button>
+              </div>
+              <ApplicationForm
+                gig={selectedGig}
+                onSuccess={handleApplicationSuccess}
+                onCancel={handleApplicationCancel}
+              />
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

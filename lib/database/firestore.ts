@@ -10,7 +10,9 @@ import {
   where,
   orderBy,
   limit,
-  DocumentData
+  DocumentData,
+  QueryConstraint,
+  WhereFilterOp
 } from 'firebase/firestore';
 import { db } from '../firebase';
 import { User } from '@/types/auth';
@@ -25,7 +27,7 @@ export class FirestoreService {
       const docRef = await addDoc(collection(db, collectionName), data);
       return docRef.id;
     } catch (error: unknown) {
-      throw new Error(`Error creating document: ${error.message}`);
+      throw new Error(`Error creating document: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
 
@@ -43,7 +45,7 @@ export class FirestoreService {
 
       return null;
     } catch (error: unknown) {
-      throw new Error(`Error getting document: ${error.message}`);
+      throw new Error(`Error getting document: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
 
@@ -56,7 +58,7 @@ export class FirestoreService {
       const docRef = doc(db, collectionName, id);
       await updateDoc(docRef, data);
     } catch (error: unknown) {
-      throw new Error(`Error updating document: ${error.message}`);
+      throw new Error(`Error updating document: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
 
@@ -68,7 +70,7 @@ export class FirestoreService {
       const docRef = doc(db, collectionName, id);
       await deleteDoc(docRef);
     } catch (error: unknown) {
-      throw new Error(`Error deleting document: ${error.message}`);
+      throw new Error(`Error deleting document: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
 
@@ -79,7 +81,7 @@ export class FirestoreService {
     limitCount?: number
   ): Promise<T[]> {
     try {
-      const queryConstraints: unknown[] = [];
+      const queryConstraints: QueryConstraint[] = [];
 
       if (orderByField) {
         queryConstraints.push(orderBy(orderByField, orderDirection));
@@ -99,21 +101,21 @@ export class FirestoreService {
         ...doc.data()
       })) as T[];
     } catch (error: unknown) {
-      throw new Error(`Error getting documents: ${error.message}`);
+      throw new Error(`Error getting documents: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
 
   static async getWhere<T>(
     collectionName: string,
     field: string,
-    operator: any,
-    value: any,
+    operator: WhereFilterOp,
+    value: unknown,
     orderByField?: string,
     orderDirection: 'asc' | 'desc' = 'desc',
     limitCount?: number
   ): Promise<T[]> {
     try {
-      let queryConstraints: any[] = [where(field, operator, value)];
+      const queryConstraints: QueryConstraint[] = [where(field, operator, value)];
 
       if (orderByField) {
         queryConstraints.push(orderBy(orderByField, orderDirection));
@@ -131,7 +133,7 @@ export class FirestoreService {
         ...doc.data()
       })) as T[];
     } catch (error: unknown) {
-      throw new Error(`Error querying documents: ${error.message}`);
+      throw new Error(`Error querying documents: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
 
@@ -141,7 +143,7 @@ export class FirestoreService {
       const users = await this.getWhere<User>('users', 'email', '==', email, undefined, 'desc', 1);
       return users.length > 0 ? users[0] : null;
     } catch (error: unknown) {
-      throw new Error(`Error getting user by email: ${error.message}`);
+      throw new Error(`Error getting user by email: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
 
@@ -149,7 +151,7 @@ export class FirestoreService {
     try {
       return await this.getWhere<User>('users', 'userType', '==', userType, 'createdAt');
     } catch (error: unknown) {
-      throw new Error(`Error getting users by type: ${error.message}`);
+      throw new Error(`Error getting users by type: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
 
@@ -178,7 +180,7 @@ export class FirestoreService {
         ))
       );
     } catch (error: unknown) {
-      throw new Error(`Error searching users: ${error.message}`);
+      throw new Error(`Error searching users: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
 }

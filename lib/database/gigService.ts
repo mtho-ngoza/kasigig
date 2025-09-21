@@ -66,7 +66,7 @@ export class GigService {
 
   // Application operations
   static async createApplication(
-    applicationData: Omit<GigApplication, 'id' | 'createdAt'>
+    applicationData: Omit<GigApplication, 'id' | 'createdAt' | 'status'>
   ): Promise<string> {
     const application = {
       ...applicationData,

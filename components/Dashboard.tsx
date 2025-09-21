@@ -1,9 +1,12 @@
 'use client'
 
-import React from 'react'
+import React, { useState } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
 import { Button } from '@/components/ui/Button'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card'
+import PostGigPage from './gig/PostGigPage'
+import MyApplications from './application/MyApplications'
+import ManageApplications from './application/ManageApplications'
 
 interface DashboardProps {
   onBrowseGigs?: () => void
@@ -11,6 +14,22 @@ interface DashboardProps {
 
 export default function Dashboard({ onBrowseGigs }: DashboardProps) {
   const { user, logout } = useAuth()
+  const [currentView, setCurrentView] = useState<'dashboard' | 'post-gig' | 'my-applications' | 'manage-applications'>('dashboard')
+
+  // Show post gig page if user is on that view
+  if (currentView === 'post-gig') {
+    return <PostGigPage onBack={() => setCurrentView('dashboard')} />
+  }
+
+  // Show my applications page if user is on that view
+  if (currentView === 'my-applications') {
+    return <MyApplications onBack={() => setCurrentView('dashboard')} />
+  }
+
+  // Show manage applications page if user is on that view
+  if (currentView === 'manage-applications') {
+    return <ManageApplications onBack={() => setCurrentView('dashboard')} />
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -93,17 +112,45 @@ export default function Dashboard({ onBrowseGigs }: DashboardProps) {
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                   {user?.userType === 'job-seeker' ? (
                     <>
-                      <Button className="w-full">Browse Gigs</Button>
+                      <Button
+                        className="w-full"
+                        onClick={onBrowseGigs}
+                      >
+                        Browse Gigs
+                      </Button>
                       <Button variant="outline" className="w-full">Update Profile</Button>
-                      <Button variant="outline" className="w-full">My Applications</Button>
+                      <Button
+                        variant="outline"
+                        className="w-full"
+                        onClick={() => setCurrentView('my-applications')}
+                      >
+                        My Applications
+                      </Button>
                       <Button variant="outline" className="w-full">Skill Assessment</Button>
                     </>
                   ) : (
                     <>
-                      <Button className="w-full">Post a Gig</Button>
+                      <Button
+                        className="w-full"
+                        onClick={() => setCurrentView('post-gig')}
+                      >
+                        Post a Gig
+                      </Button>
                       <Button variant="outline" className="w-full">Manage Gigs</Button>
-                      <Button variant="outline" className="w-full">View Applications</Button>
-                      <Button variant="outline" className="w-full">Find Talent</Button>
+                      <Button
+                        variant="outline"
+                        className="w-full"
+                        onClick={() => setCurrentView('manage-applications')}
+                      >
+                        View Applications
+                      </Button>
+                      <Button
+                        variant="outline"
+                        className="w-full"
+                        onClick={onBrowseGigs}
+                      >
+                        Browse Talent
+                      </Button>
                     </>
                   )}
                 </div>

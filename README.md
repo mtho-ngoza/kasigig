@@ -1,40 +1,79 @@
 # GigSA - South African Gig Economy Platform
 
-A modern, responsive web platform connecting job seekers with employers in South Africa's growing gig economy.
+A modern, responsive web platform connecting job seekers with employers in South Africa's growing gig economy. Designed to be accessible to both digital professionals and informal economy workers.
+
+## 🌍 **Mission: Inclusive Gig Economy**
+
+GigSA bridges the gap between South Africa's digital economy and informal work sector by providing:
+- **Context-aware user experience** that adapts to different work types
+- **Barrier-free access** for informal workers (cleaning, construction, transport)
+- **Professional tools** for digital freelancers (tech, design, marketing)
+- **South African focus** with local pricing, cities, and economic realities
 
 ## 🚀 Current Status
 
-**✅ MVP Complete & Functional!**
+**✅ Full-Featured Gig Economy Platform!**
+- Complete application system with gig posting, applications, and tracking
+- Informal economy accessibility with context-aware forms
 - Authentication system working with Firebase
-- Public gig browsing implemented with demo data
+- Public gig browsing with real-time application functionality
 - Role-based dashboards for job seekers and employers
 - Responsive design with Tailwind CSS v4
-- Error handling and loading states
+- Comprehensive error handling and loading states
 
 ## 🎯 Features
 
 ### ✅ **Implemented Features**
+
+#### **Core Platform**
 - **🔐 User Authentication**: Firebase-powered registration and login
 - **👥 Role-based Access**: Separate experiences for job seekers and employers
 - **🌐 Public Gig Browser**: Browse gigs without authentication required
 - **📱 Responsive Design**: Mobile-first, works on all devices
 - **🎨 Modern UI**: Professional design with Tailwind CSS v4
 - **🔄 Smooth Navigation**: Seamless transitions between pages
-- **💾 Demo Data**: 5 realistic South African gigs for testing
 - **⚡ Error Handling**: Graceful error boundaries and fallbacks
 - **🔍 Search & Filter**: Filter gigs by category and search terms
 
-### 🚧 **Planned Features** (Next Development Phase)
+#### **Gig Management**
 - **📝 Gig Posting**: Employers can create and manage job postings
-- **📋 Application System**: Job seekers can apply and track applications
-- **👤 Profile Management**: Detailed user profiles with skills and portfolio
-- **💬 Messaging System**: Direct communication between users
-- **💳 Payment Integration**: Secure payment processing for completed work
-- **⭐ Review System**: Rating and feedback system
-- **🔍 Advanced Search**: Enhanced filtering and search capabilities
-- **📊 Analytics Dashboard**: Insights for employers and job seekers
-- **🔔 Notifications**: Real-time updates and alerts
-- **📧 Email Integration**: Automated email notifications
+- **🏷️ Context-Aware Forms**: Different fields for digital vs physical work
+- **📊 Gig Categories**: Technology, Design, Writing, Marketing, Construction, Transportation, Cleaning, Healthcare, Other
+- **💰 Budget Management**: Flexible pricing with minimum R100 validation
+- **📅 Duration Tracking**: From 1 day to 6+ months or ongoing projects
+
+#### **Application System**
+- **📋 Apply for Gigs**: Job seekers can submit applications with one click
+- **📱 Application Tracking**: "My Applications" dashboard for job seekers
+- **👔 Application Management**: "View Applications" dashboard for employers
+- **🔄 Status Updates**: Real-time pending → accepted/rejected workflow
+- **📊 Application Analytics**: Stats and summary for both user types
+
+#### **Informal Economy Accessibility**
+- **🗣️ Simplified Language**: "Tell us about yourself" vs "Cover Letter" for physical work
+- **📋 Quick Selection**: Dropdowns for experience, availability, equipment
+- **🎯 Category-Specific Guidance**: Different examples for cleaning, construction, etc.
+- **✅ Optional Fields**: Reduced validation for informal work categories
+- **💡 Smart Tips**: Context-aware application guidance
+
+#### **Demo & Testing**
+- **💾 Demo Data**: 6 realistic South African gigs including cleaning examples
+- **🧪 Test Accounts**: Both job seeker and employer registration flows
+- **📍 SA Locations**: Pre-configured South African cities and remote options
+
+### 🚧 **Planned Features** (Next Development Phase)
+- **👤 Profile Management**: Detailed user profiles with skills, portfolio, and photo uploads
+- **💬 Messaging System**: Direct communication between employers and job seekers
+- **💳 Payment Integration**: Secure payment processing with escrow for completed work
+- **⭐ Review System**: Rating and feedback system for completed gigs
+- **🔍 Advanced Search**: Location-based matching, salary range filters, skills search
+- **📊 Analytics Dashboard**: Insights and performance metrics for platform users
+- **🔔 Notifications**: Real-time updates and alerts (email, push, in-app)
+- **📧 Email Integration**: Automated email notifications for applications and updates
+- **📱 Mobile App**: React Native app for on-the-go access
+- **🗺️ Location Services**: GPS-based matching for physical services
+- **📄 Document Upload**: ID verification, certificates, portfolio files
+- **🏆 Skills Verification**: Badges and certifications for service providers
 
 ## 🛠 Tech Stack
 
@@ -97,10 +136,17 @@ npm run dev
 │   ├── layout.tsx                # Root layout with providers
 │   └── page.tsx                  # Home page with routing logic
 ├── components/                    # React components
+│   ├── application/              # Application system components
+│   │   ├── ApplicationForm.tsx   # Context-aware application submission
+│   │   ├── MyApplications.tsx    # Job seeker application tracking
+│   │   └── ManageApplications.tsx # Employer application management
 │   ├── auth/                     # Authentication UI
 │   │   ├── AuthPage.tsx          # Login/signup page
 │   │   ├── LoginForm.tsx         # Login form component
 │   │   └── RegisterForm.tsx      # Registration form
+│   ├── gig/                      # Gig management components
+│   │   ├── PostGigForm.tsx       # Context-aware gig posting form
+│   │   └── PostGigPage.tsx       # Gig posting with success flow
 │   ├── ui/                       # Reusable UI components
 │   │   ├── Button.tsx            # Custom button component
 │   │   ├── Card.tsx              # Card layout component
@@ -116,19 +162,31 @@ npm run dev
 │   │   └── firebase.ts           # Firebase auth integration
 │   ├── database/                 # Database operations
 │   │   ├── firestore.ts          # Generic Firestore service
-│   │   └── gigService.ts         # Gig-specific operations
+│   │   └── gigService.ts         # Gig and application operations
 │   └── firebase.ts               # Firebase configuration
 └── types/                        # TypeScript definitions
     ├── auth.ts                   # Auth-related types
-    └── gig.ts                    # Gig-related types
+    └── gig.ts                    # Gig and application types
 ```
 
 ## 🎨 Key Design Decisions
+
+### Market Positioning
+- **Gig economy focus**: Project-based work vs traditional job market (LinkedIn/PNet)
+- **South African context**: ZAR pricing, local cities, informal economy inclusion
+- **Accessibility first**: Barrier-free entry for informal workers
+- **Digital + Physical services**: Both online work and on-site services
 
 ### Authentication Flow
 - **Public-first approach**: Browse gigs without signup required
 - **Role-based registration**: Job seekers vs employers get different dashboards
 - **Seamless navigation**: Easy switching between public browsing and authenticated features
+
+### Informal Economy Accessibility
+- **Context-aware forms**: Different UX for digital vs physical work
+- **Simplified language**: "Tell us about yourself" vs "Cover Letter"
+- **Reduced barriers**: Optional fields, dropdown selections, minimal validation
+- **Category-specific guidance**: Tailored examples for cleaning, construction, etc.
 
 ### Technical Architecture
 - **Tailwind CSS v4**: Latest version with `@theme` configuration in CSS
@@ -136,14 +194,31 @@ npm run dev
 - **TypeScript throughout**: Type safety for robust development
 - **Error boundaries**: Graceful handling of runtime errors
 - **Demo data fallback**: Functional experience even without Firebase setup
+- **Component modularity**: Reusable, context-aware form components
 
 ## 🧪 Testing the Application
 
-1. **Public browsing**: Visit homepage to see demo gigs
+### Basic Platform Testing
+1. **Public browsing**: Visit homepage to see 6 demo gigs (including cleaning example)
 2. **User registration**: Click "Sign Up" to create job seeker/employer account
 3. **Role-based dashboards**: Login to see different interfaces based on user type
-4. **Navigation flow**: Test seamless transitions between browsing, auth, and dashboard
-5. **Search functionality**: Try filtering gigs by category and search terms
+4. **Search functionality**: Try filtering gigs by category and search terms
+
+### Application System Testing
+5. **Apply for gigs**: As job seeker, click "Apply" on any gig to test application flow
+6. **Compare form types**: Apply to cleaning gig vs tech gig to see context-aware forms
+7. **Track applications**: Use "My Applications" to see submitted applications with status
+8. **Manage applications**: As employer, use "View Applications" to accept/reject
+
+### Gig Posting Testing
+9. **Post digital gig**: As employer, post a Technology/Design gig (skills required)
+10. **Post informal gig**: Post a Cleaning/Construction gig (optional work description)
+11. **Form adaptation**: Watch how form changes based on selected category
+
+### Informal Economy Features
+12. **Cleaning application**: Apply to "Weekly House Cleaning" gig to see simplified form
+13. **Experience dropdowns**: Test dropdown selections for years, availability, equipment
+14. **Language differences**: Compare "Tell us about yourself" vs "Cover Letter" prompts
 
 ## 🔧 Development Commands
 
@@ -166,28 +241,28 @@ Ensure environment variables are configured in your deployment platform.
 ## 📋 Remaining TODOs
 
 ### High Priority
-- [ ] **Gig posting interface** for employers
-- [ ] **Application submission system** for job seekers
-- [ ] **Profile management** pages (skills, experience, portfolio)
-- [ ] **Real-time messaging** between users
-- [ ] **Firestore security rules** implementation
+- [ ] **Enhanced profile management** with portfolio uploads and photo
+- [ ] **Firestore security rules** implementation for production
+- [ ] **Real-time messaging** between employers and job seekers
+- [ ] **Payment integration** with escrow for project-based work
+- [ ] **Email notifications** for application updates and status changes
 
 ### Medium Priority
-- [ ] **Payment integration** (Stripe/PayFast for South Africa)
 - [ ] **Review and rating system** for completed gigs
-- [ ] **Email notifications** for applications and updates
-- [ ] **Advanced search filters** (location, salary range, skills)
-- [ ] **File upload** for portfolios and documents
+- [ ] **Advanced search filters** (location radius, salary range, skills matching)
+- [ ] **File upload system** for portfolios, certificates, and ID verification
+- [ ] **Gig management** dashboard for employers (edit, pause, close gigs)
+- [ ] **Application analytics** and insights for both user types
 
 ### Future Enhancements
-- [ ] **Mobile app** (React Native)
-- [ ] **Analytics dashboard** for platform insights
-- [ ] **Multi-language support** (Afrikaans, Zulu, etc.)
-- [ ] **Location-based matching** with maps integration
-- [ ] **Skills verification** system
-- [ ] **Freelancer portfolio** showcase
-- [ ] **Push notifications** for mobile
-- [ ] **Advanced reporting** for platform analytics
+- [ ] **Mobile app** (React Native) with offline capabilities
+- [ ] **Location-based matching** with GPS for physical services
+- [ ] **Multi-language support** (Afrikaans, Zulu, Xhosa for accessibility)
+- [ ] **Skills verification** and certification system
+- [ ] **Push notifications** for real-time updates
+- [ ] **Advanced analytics** dashboard for platform insights
+- [ ] **In-app chat** with file sharing and voice messages
+- [ ] **Calendar integration** for scheduling physical services
 
 ## 🔧 Known Issues
 
