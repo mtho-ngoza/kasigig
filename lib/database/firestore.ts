@@ -10,8 +10,6 @@ import {
   where,
   orderBy,
   limit,
-  startAfter,
-  QueryDocumentSnapshot,
   DocumentData
 } from 'firebase/firestore';
 import { db } from '../firebase';
@@ -26,7 +24,7 @@ export class FirestoreService {
     try {
       const docRef = await addDoc(collection(db, collectionName), data);
       return docRef.id;
-    } catch (error: any) {
+    } catch (error: unknown) {
       throw new Error(`Error creating document: ${error.message}`);
     }
   }
@@ -44,7 +42,7 @@ export class FirestoreService {
       }
 
       return null;
-    } catch (error: any) {
+    } catch (error: unknown) {
       throw new Error(`Error getting document: ${error.message}`);
     }
   }
@@ -57,7 +55,7 @@ export class FirestoreService {
     try {
       const docRef = doc(db, collectionName, id);
       await updateDoc(docRef, data);
-    } catch (error: any) {
+    } catch (error: unknown) {
       throw new Error(`Error updating document: ${error.message}`);
     }
   }
@@ -69,7 +67,7 @@ export class FirestoreService {
     try {
       const docRef = doc(db, collectionName, id);
       await deleteDoc(docRef);
-    } catch (error: any) {
+    } catch (error: unknown) {
       throw new Error(`Error deleting document: ${error.message}`);
     }
   }
@@ -81,8 +79,7 @@ export class FirestoreService {
     limitCount?: number
   ): Promise<T[]> {
     try {
-      let q = collection(db, collectionName);
-      let queryConstraints: any[] = [];
+      const queryConstraints: unknown[] = [];
 
       if (orderByField) {
         queryConstraints.push(orderBy(orderByField, orderDirection));
@@ -92,16 +89,16 @@ export class FirestoreService {
         queryConstraints.push(limit(limitCount));
       }
 
-      if (queryConstraints.length > 0) {
-        q = query(collection(db, collectionName), ...queryConstraints);
-      }
+      const q = queryConstraints.length > 0
+        ? query(collection(db, collectionName), ...queryConstraints)
+        : collection(db, collectionName);
 
       const querySnapshot = await getDocs(q);
       return querySnapshot.docs.map(doc => ({
         id: doc.id,
         ...doc.data()
       })) as T[];
-    } catch (error: any) {
+    } catch (error: unknown) {
       throw new Error(`Error getting documents: ${error.message}`);
     }
   }
@@ -133,7 +130,7 @@ export class FirestoreService {
         id: doc.id,
         ...doc.data()
       })) as T[];
-    } catch (error: any) {
+    } catch (error: unknown) {
       throw new Error(`Error querying documents: ${error.message}`);
     }
   }
@@ -143,7 +140,7 @@ export class FirestoreService {
     try {
       const users = await this.getWhere<User>('users', 'email', '==', email, undefined, 'desc', 1);
       return users.length > 0 ? users[0] : null;
-    } catch (error: any) {
+    } catch (error: unknown) {
       throw new Error(`Error getting user by email: ${error.message}`);
     }
   }
@@ -151,7 +148,7 @@ export class FirestoreService {
   static async getUsersByType(userType: 'job-seeker' | 'employer'): Promise<User[]> {
     try {
       return await this.getWhere<User>('users', 'userType', '==', userType, 'createdAt');
-    } catch (error: any) {
+    } catch (error: unknown) {
       throw new Error(`Error getting users by type: ${error.message}`);
     }
   }
@@ -180,7 +177,7 @@ export class FirestoreService {
           skill.toLowerCase().includes(searchTermLower)
         ))
       );
-    } catch (error: any) {
+    } catch (error: unknown) {
       throw new Error(`Error searching users: ${error.message}`);
     }
   }

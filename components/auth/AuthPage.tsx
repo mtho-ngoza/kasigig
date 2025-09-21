@@ -4,19 +4,33 @@ import React, { useState } from 'react'
 import { LoginForm } from './LoginForm'
 import { RegisterForm } from './RegisterForm'
 import { Card, CardContent } from '@/components/ui/Card'
+import { Button } from '@/components/ui/Button'
 
-export default function AuthPage() {
+interface AuthPageProps {
+  onBackClick?: () => void
+}
+
+export default function AuthPage({ onBackClick }: AuthPageProps) {
   const [activeTab, setActiveTab] = useState<'login' | 'register'>('login')
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full space-y-8">
+        {/* Back button */}
+        {onBackClick && (
+          <div className="text-left">
+            <Button variant="ghost" onClick={onBackClick} className="text-sm">
+              ← Back to Browse Gigs
+            </Button>
+          </div>
+        )}
+
         <div>
           <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
             Welcome to GigSA
           </h2>
           <p className="mt-2 text-center text-sm text-gray-600">
-            South Africa's premier gig economy platform
+            South Africa&apos;s premier gig economy platform
           </p>
         </div>
 

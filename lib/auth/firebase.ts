@@ -40,8 +40,8 @@ export class FirebaseAuthService {
       await setDoc(doc(db, 'users', firebaseUser.uid), user);
 
       return user;
-    } catch (error: any) {
-      throw new Error(error.message || 'Registration failed');
+    } catch (error: unknown) {
+      throw new Error(error instanceof Error ? error.message : 'Registration failed');
     }
   }
 
@@ -60,16 +60,16 @@ export class FirebaseAuthService {
       }
 
       return userDoc.data() as User;
-    } catch (error: any) {
-      throw new Error(error.message || 'Sign in failed');
+    } catch (error: unknown) {
+      throw new Error(error instanceof Error ? error.message : 'Sign in failed');
     }
   }
 
   static async signOut(): Promise<void> {
     try {
       await signOut(auth);
-    } catch (error: any) {
-      throw new Error(error.message || 'Sign out failed');
+    } catch (error: unknown) {
+      throw new Error(error instanceof Error ? error.message : 'Sign out failed');
     }
   }
 
@@ -118,8 +118,8 @@ export class FirebaseAuthService {
   static async updateUserProfile(userId: string, updates: Partial<User>): Promise<void> {
     try {
       await setDoc(doc(db, 'users', userId), updates, { merge: true });
-    } catch (error: any) {
-      throw new Error(error.message || 'Profile update failed');
+    } catch (error: unknown) {
+      throw new Error(error instanceof Error ? error.message : 'Profile update failed');
     }
   }
 }

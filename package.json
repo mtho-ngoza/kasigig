@@ -9,7 +9,12 @@
     "start": "next start",
     "lint": "next lint"
   },
-  "keywords": ["gig", "economy", "south-africa", "platform"],
+  "keywords": [
+    "gig",
+    "economy",
+    "south-africa",
+    "platform"
+  ],
   "author": "",
   "license": "ISC",
   "dependencies": {

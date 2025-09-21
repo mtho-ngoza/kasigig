@@ -5,7 +5,11 @@ import { useAuth } from '@/contexts/AuthContext'
 import { Button } from '@/components/ui/Button'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card'
 
-export default function Dashboard() {
+interface DashboardProps {
+  onBrowseGigs?: () => void
+}
+
+export default function Dashboard({ onBrowseGigs }: DashboardProps) {
   const { user, logout } = useAuth()
 
   return (
@@ -14,10 +18,15 @@ export default function Dashboard() {
       <header className="bg-white shadow-sm border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
-            <div className="flex items-center">
+            <div className="flex items-center space-x-6">
               <h1 className="text-xl font-semibold text-gray-900">
                 GigSA Dashboard
               </h1>
+              {onBrowseGigs && (
+                <Button variant="ghost" onClick={onBrowseGigs} className="text-sm">
+                  Browse All Gigs
+                </Button>
+              )}
             </div>
             <div className="flex items-center space-x-4">
               <span className="text-sm text-gray-700">
@@ -42,7 +51,7 @@ export default function Dashboard() {
               </CardHeader>
               <CardContent>
                 <p className="text-gray-600 mb-4">
-                  You're successfully logged in to South Africa's premier gig economy platform.
+                  You&apos;re successfully logged in to South Africa&apos;s premier gig economy platform.
                 </p>
                 <div className="space-y-2">
                   <p><strong>Account Type:</strong> {user?.userType === 'job-seeker' ? 'Job Seeker' : 'Employer'}</p>
@@ -112,7 +121,7 @@ export default function Dashboard() {
                 <div className="prose max-w-none">
                   <p className="text-gray-600">
                     Welcome to GigSA! Your Firebase integration is working perfectly.
-                    Here's what you can do next:
+                    Here&apos;s what you can do next:
                   </p>
                   <ul className="mt-4 space-y-2 text-gray-600">
                     <li>• Complete your profile to attract more opportunities</li>
