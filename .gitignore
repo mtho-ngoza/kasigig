@@ -44,9 +44,11 @@ next-env.d.ts
 *.swo
 
 # OS
-.DS_Store
 Thumbs.db
 
 # screenshots
 *.png
+
+# claude
+.claude/
 

@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { useAuth } from '@/contexts/AuthContext'
 import { ProfileService } from '@/lib/database/profileService'
+import { useToast } from '@/contexts/ToastContext'
 
 interface ExperienceFormProps {
   onBack?: () => void
@@ -39,6 +40,7 @@ const EDUCATION_LEVELS = [
 ]
 
 export default function ExperienceForm({ onBack }: ExperienceFormProps) {
+  const { success, error: showError, warning } = useToast()
   const { user, refreshUser } = useAuth()
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [formData, setFormData] = useState({
@@ -86,11 +88,11 @@ export default function ExperienceForm({ onBack }: ExperienceFormProps) {
       await ProfileService.updateProfileCompleteness(user.id)
       await refreshUser()
 
-      alert('Experience updated successfully!')
+      success('Experience updated successfully!')
       if (onBack) onBack()
-    } catch (error) {
-      console.error('Error updating experience:', error)
-      alert('Failed to update experience. Please try again.')
+    } catch (err) {
+      console.error('Error updating experience:', err)
+      showError('Failed to update experience. Please try again.')
     } finally {
       setIsSubmitting(false)
     }

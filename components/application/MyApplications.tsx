@@ -6,19 +6,26 @@ import { Button } from '@/components/ui/Button'
 import { GigService } from '@/lib/database/gigService'
 import { useAuth } from '@/contexts/AuthContext'
 import { GigApplication } from '@/types/gig'
+import { QuickMessageButton } from '@/components/messaging/QuickMessageButton'
+import { useMessaging } from '@/contexts/MessagingContext'
 
 interface MyApplicationsProps {
   onBack?: () => void
+  onBrowseGigs?: () => void
+  onMessageConversationStart?: (conversationId: string) => void
+  onMessagesClick?: () => void
 }
 
 interface ApplicationWithGig extends GigApplication {
   gigTitle?: string
   gigEmployer?: string
+  gigEmployerId?: string
   gigBudget?: number
 }
 
-export default function MyApplications({ onBack }: MyApplicationsProps) {
+export default function MyApplications({ onBack, onBrowseGigs, onMessageConversationStart, onMessagesClick }: MyApplicationsProps) {
   const { user } = useAuth()
+  const { totalUnreadCount } = useMessaging()
   const [applications, setApplications] = useState<ApplicationWithGig[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -40,6 +47,7 @@ export default function MyApplications({ onBack }: MyApplicationsProps) {
                 ...app,
                 gigTitle: gig?.title || 'Unknown Gig',
                 gigEmployer: gig?.employerName || 'Unknown Employer',
+                gigEmployerId: gig?.employerId,
                 gigBudget: gig?.budget
               }
             } catch (error) {
@@ -145,11 +153,29 @@ export default function MyApplications({ onBack }: MyApplicationsProps) {
       <div className="max-w-6xl mx-auto px-4">
         {/* Header */}
         <div className="mb-8">
-          {onBack && (
-            <Button variant="ghost" onClick={onBack} className="mb-4">
-              ← Back to Dashboard
-            </Button>
-          )}
+          <div className="flex items-center justify-between mb-4">
+            {onBack && (
+              <Button variant="ghost" onClick={onBack}>
+                ← Back to Dashboard
+              </Button>
+            )}
+            {onMessagesClick && (
+              <Button
+                variant="ghost"
+                onClick={onMessagesClick}
+                className="relative"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                </svg>
+                {totalUnreadCount > 0 && (
+                  <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+                    {totalUnreadCount > 9 ? '9+' : totalUnreadCount}
+                  </span>
+                )}
+              </Button>
+            )}
+          </div>
 
           <div className="text-center mb-8">
             <h1 className="text-3xl font-bold text-gray-900 mb-2">
@@ -179,7 +205,7 @@ export default function MyApplications({ onBack }: MyApplicationsProps) {
                 You haven&apos;t applied to any gigs yet. Start browsing available opportunities and submit your first application!
               </p>
 
-              <Button>
+              <Button onClick={onBrowseGigs}>
                 Browse Gigs
               </Button>
             </CardContent>
@@ -266,16 +292,31 @@ export default function MyApplications({ onBack }: MyApplicationsProps) {
 
                   {application.status === 'accepted' && (
                     <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-                      <div className="flex items-center">
-                        <svg className="w-5 h-5 text-green-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                        </svg>
-                        <span className="text-green-800 font-medium">
-                          Congratulations! Your application has been accepted.
-                        </span>
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center">
+                          <svg className="w-5 h-5 text-green-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                          </svg>
+                          <span className="text-green-800 font-medium">
+                            Congratulations! Your application has been accepted.
+                          </span>
+                        </div>
+                        {application.gigEmployerId && (
+                          <QuickMessageButton
+                            recipientId={application.gigEmployerId}
+                            recipientName={application.gigEmployer || 'Client'}
+                            recipientType="employer"
+                            gigId={application.gigId}
+                            gigTitle={application.gigTitle}
+                            size="sm"
+                            onConversationStart={onMessageConversationStart}
+                          >
+                            Contact Client
+                          </QuickMessageButton>
+                        )}
                       </div>
-                      <p className="text-green-700 text-sm mt-2">
-                        The client should contact you soon to discuss project details and next steps.
+                      <p className="text-green-700 text-sm">
+                        You can now message the client to discuss project details and next steps.
                       </p>
                     </div>
                   )}

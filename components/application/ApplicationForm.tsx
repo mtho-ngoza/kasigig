@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/Input'
 import { GigService } from '@/lib/database/gigService'
 import { useAuth } from '@/contexts/AuthContext'
 import { Gig } from '@/types/gig'
+import { useToast } from '@/contexts/ToastContext'
 
 interface ApplicationFormProps {
   gig: Gig
@@ -23,6 +24,7 @@ interface ApplicationFormData {
 }
 
 export default function ApplicationForm({ gig, onSuccess, onCancel }: ApplicationFormProps) {
+  const { success, error: showError, warning } = useToast()
   const { user } = useAuth()
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [errors, setErrors] = useState<Partial<ApplicationFormData>>({})
@@ -97,7 +99,7 @@ export default function ApplicationForm({ gig, onSuccess, onCancel }: Applicatio
     e.preventDefault()
 
     if (!user) {
-      alert('You must be logged in to apply for a gig')
+      showError('You must be logged in to apply for a gig')
       return
     }
 
@@ -144,7 +146,7 @@ export default function ApplicationForm({ gig, onSuccess, onCancel }: Applicatio
       if (onSuccess) {
         onSuccess()
       } else {
-        alert('Application submitted successfully!')
+        success('Application submitted successfully!')
         setFormData({
           coverLetter: '',
           proposedRate: gig.budget.toString(),
@@ -155,7 +157,7 @@ export default function ApplicationForm({ gig, onSuccess, onCancel }: Applicatio
       }
     } catch (error) {
       console.error('Error submitting application:', error)
-      alert('Failed to submit application. Please try again.')
+      showError('Failed to submit application. Please try again.')
     } finally {
       setIsSubmitting(false)
     }

@@ -67,13 +67,21 @@ GigSA bridges the gap between South Africa's digital economy and informal work s
 - **📊 Profile Completeness**: Real-time progress tracking with actionable suggestions
 - **🔧 Work Sector Selection**: Choose work type during signup for immediate context
 
+#### **Messaging System**
+- **💬 Real-time Messaging**: Direct communication between employers and job seekers
+- **🔔 Unread Message Indicators**: Visual badges showing unread message counts
+- **📱 Responsive Chat Interface**: Mobile-friendly messaging with typing indicators
+- **🗂️ Conversation Management**: Organized conversations linked to specific gigs
+- **⚡ Contextual Messaging**: Quick message buttons throughout the application flow
+- **📋 Message History**: Persistent conversation history with date grouping
+- **🔄 Auto-scroll & Real-time Updates**: Seamless message delivery and display
+
 #### **Demo & Testing**
 - **💾 Demo Data**: 6 realistic South African gigs including cleaning examples
 - **🧪 Test Accounts**: Both job seeker and employer registration flows
 - **📍 SA Locations**: Pre-configured South African cities and remote options
 
 ### 🚧 **Planned Features** (Next Development Phase)
-- **💬 Messaging System**: Direct communication between employers and job seekers
 - **💳 Payment Integration**: Secure payment processing with escrow for completed work
 - **⭐ Review System**: Rating and feedback system for completed gigs
 - **🔍 Advanced Search**: Location-based matching, salary range filters, skills search
@@ -160,6 +168,13 @@ npm run dev
 │   ├── gig/                      # Gig management components
 │   │   ├── PostGigForm.tsx       # Context-aware gig posting form
 │   │   └── PostGigPage.tsx       # Gig posting with success flow
+│   ├── messaging/                # Real-time messaging system
+│   │   ├── MessagingHub.tsx      # Main messaging interface with responsive design
+│   │   ├── ConversationList.tsx  # List of user conversations with unread indicators
+│   │   ├── ChatWindow.tsx        # Individual conversation chat interface
+│   │   ├── MessageList.tsx       # Message display with date grouping
+│   │   ├── MessageInputForm.tsx  # Message composition with file support
+│   │   └── QuickMessageButton.tsx # Context-aware messaging buttons
 │   ├── profile/                  # Profile management components
 │   │   ├── ProfileManagement.tsx # Main profile management hub
 │   │   ├── BasicInfoForm.tsx     # Personal information and social links
@@ -177,20 +192,23 @@ npm run dev
 │   ├── PublicGigBrowser.tsx      # Public gig browsing interface
 │   └── ErrorBoundary.tsx         # Error boundary component
 ├── contexts/                      # React contexts
-│   └── AuthContext.tsx           # Authentication state management
+│   ├── AuthContext.tsx           # Authentication state management
+│   └── MessagingContext.tsx      # Real-time messaging state management
 ├── lib/                          # Core business logic
 │   ├── auth/                     # Authentication services
 │   │   └── firebase.ts           # Firebase auth integration
 │   ├── database/                 # Database operations
 │   │   ├── firestore.ts          # Generic Firestore service
 │   │   ├── gigService.ts         # Gig and application operations
-│   │   └── profileService.ts     # Profile and file upload operations
+│   │   ├── profileService.ts     # Profile and file upload operations
+│   │   └── messagingService.ts   # Real-time messaging operations
 │   ├── utils/                    # Utility functions
 │   │   └── userProfile.ts        # Context-aware profile configuration
 │   └── firebase.ts               # Firebase configuration with Storage
 └── types/                        # TypeScript definitions
     ├── auth.ts                   # Auth-related types
-    └── gig.ts                    # Gig and application types
+    ├── gig.ts                    # Gig and application types
+    └── messaging.ts              # Messaging and conversation types
 ```
 
 ## 🎨 Key Design Decisions
@@ -243,6 +261,14 @@ npm run dev
 12. **Cleaning application**: Apply to "Weekly House Cleaning" gig to see simplified form
 13. **Experience dropdowns**: Test dropdown selections for years, availability, equipment
 14. **Language differences**: Compare "Tell us about yourself" vs "Cover Letter" prompts
+
+### Messaging System Testing
+15. **Message from gig browsing**: Click "Message" button on any gig card to start conversation
+16. **Application messaging**: View applications as employer/job seeker to see message buttons
+17. **Real-time conversations**: Open messages in dashboard, send messages between users
+18. **Unread indicators**: Notice red badge counts in header and dashboard buttons
+19. **Mobile responsive**: Test messaging interface on mobile devices
+20. **Conversation persistence**: Refresh page to verify messages are saved
 
 ## 🔧 Development Commands
 

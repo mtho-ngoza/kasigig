@@ -6,6 +6,8 @@ import { Button } from '@/components/ui/Button'
 import { GigService } from '@/lib/database/gigService'
 import { useAuth } from '@/contexts/AuthContext'
 import { GigApplication, Gig } from '@/types/gig'
+import { QuickMessageButton } from '@/components/messaging/QuickMessageButton'
+import { useToast } from '@/contexts/ToastContext'
 
 interface ManageApplicationsProps {
   onBack?: () => void
@@ -17,6 +19,7 @@ interface ApplicationWithGig extends GigApplication {
 }
 
 export default function ManageApplications({ onBack }: ManageApplicationsProps) {
+  const { success, error: showError, warning } = useToast()
   const { user } = useAuth()
   const [applications, setApplications] = useState<ApplicationWithGig[]>([])
   const [gigs, setGigs] = useState<Gig[]>([])
@@ -86,11 +89,11 @@ export default function ManageApplications({ onBack }: ManageApplicationsProps) 
 
       // Show success message
       const actionText = status === 'accepted' ? 'accepted' : 'rejected'
-      alert(`Application ${actionText} successfully!`)
+      success(`Application ${actionText} successfully!`)
 
     } catch (error) {
       console.error('Error updating application status:', error)
-      alert('Failed to update application status. Please try again.')
+      showError('Failed to update application status. Please try again.')
     } finally {
       setProcessingApplications(prev => {
         const newSet = new Set(prev)
@@ -300,7 +303,16 @@ export default function ManageApplications({ onBack }: ManageApplicationsProps) 
                   </div>
 
                   {application.status === 'pending' && (
-                    <div className="flex space-x-3">
+                    <div className="flex flex-wrap gap-3">
+                      <QuickMessageButton
+                        recipientId={application.applicantId}
+                        recipientName={application.applicantName}
+                        recipientType="job-seeker"
+                        gigId={application.gigId}
+                        gigTitle={application.gigTitle}
+                        size="sm"
+                        variant="outline"
+                      />
                       <Button
                         onClick={() => handleApplicationAction(application.id, 'accepted')}
                         disabled={processingApplications.has(application.id)}
@@ -322,13 +334,25 @@ export default function ManageApplications({ onBack }: ManageApplicationsProps) 
 
                   {application.status === 'accepted' && (
                     <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-                      <div className="flex items-center">
-                        <svg className="w-5 h-5 text-green-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                        </svg>
-                        <span className="text-green-800 font-medium">
-                          Application accepted - Please contact {application.applicantName} to begin the project.
-                        </span>
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center">
+                          <svg className="w-5 h-5 text-green-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                          </svg>
+                          <span className="text-green-800 font-medium">
+                            Application accepted - Contact {application.applicantName} to begin the project.
+                          </span>
+                        </div>
+                        <QuickMessageButton
+                          recipientId={application.applicantId}
+                          recipientName={application.applicantName}
+                          recipientType="job-seeker"
+                          gigId={application.gigId}
+                          gigTitle={application.gigTitle}
+                          size="sm"
+                        >
+                          Contact Worker
+                        </QuickMessageButton>
                       </div>
                     </div>
                   )}

@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { useAuth } from '@/contexts/AuthContext'
 import { ProfileService } from '@/lib/database/profileService'
+import { useToast } from '@/contexts/ToastContext'
 
 interface BasicInfoFormProps {
   onBack?: () => void
@@ -29,6 +30,7 @@ const SA_LOCATIONS = [
 ]
 
 export default function BasicInfoForm({ onBack }: BasicInfoFormProps) {
+  const { success, error: showError } = useToast()
   const { user, refreshUser } = useAuth()
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [formData, setFormData] = useState({
@@ -89,11 +91,11 @@ export default function BasicInfoForm({ onBack }: BasicInfoFormProps) {
       await ProfileService.updateProfileCompleteness(user.id)
       await refreshUser()
 
-      alert('Profile updated successfully!')
+      success('Profile updated successfully!')
       if (onBack) onBack()
-    } catch (error) {
-      console.error('Error updating profile:', error)
-      alert('Failed to update profile. Please try again.')
+    } catch (err) {
+      console.error('Error updating profile:', err)
+      showError('Failed to update profile. Please try again.')
     } finally {
       setIsSubmitting(false)
     }

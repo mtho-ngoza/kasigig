@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/Input'
 import { useAuth } from '@/contexts/AuthContext'
 import { ProfileService } from '@/lib/database/profileService'
 import { getProfileSectionConfig, isInformalWorker } from '@/lib/utils/userProfile'
+import { useToast } from '@/contexts/ToastContext'
 
 interface SkillsFormProps {
   onBack?: () => void
@@ -46,6 +47,7 @@ const LANGUAGES = [
 ]
 
 export default function SkillsForm({ onBack }: SkillsFormProps) {
+  const { success, error: showError, warning } = useToast()
   const { user, refreshUser } = useAuth()
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [newSkill, setNewSkill] = useState('')
@@ -119,11 +121,11 @@ export default function SkillsForm({ onBack }: SkillsFormProps) {
       await ProfileService.updateProfileCompleteness(user.id)
       await refreshUser()
 
-      alert('Skills updated successfully!')
+      success('Skills updated successfully!')
       if (onBack) onBack()
-    } catch (error) {
-      console.error('Error updating skills:', error)
-      alert('Failed to update skills. Please try again.')
+    } catch (err) {
+      console.error('Error updating skills:', err)
+      showError('Failed to update skills. Please try again.')
     } finally {
       setIsSubmitting(false)
     }
@@ -154,7 +156,7 @@ export default function SkillsForm({ onBack }: SkillsFormProps) {
           {/* Skills Section */}
           <Card>
             <CardHeader>
-              <CardTitle>{config?.skillsLabel || 'Skills & Expertise'}</CardTitle>
+              <CardTitle>{isInformal ? 'Your Skills' : 'Skills & Expertise'}</CardTitle>
               <p className="text-gray-600">
                 {isInformal ? 'Tell people what you can do and how well you do it' : 'Add skills that highlight your capabilities'}
               </p>
@@ -274,8 +276,8 @@ export default function SkillsForm({ onBack }: SkillsFormProps) {
           {/* Certifications Section */}
           <Card>
             <CardHeader>
-              <CardTitle>{config?.certificationsLabel || 'Certifications & Qualifications'}</CardTitle>
-              <p className="text-gray-600">{config?.certificationsDescription || 'Add your professional certifications and qualifications'}</p>
+              <CardTitle>{isInformal ? 'Certificates & Training' : 'Certifications & Qualifications'}</CardTitle>
+              <p className="text-gray-600">{isInformal ? 'Add any certificates or training you have completed' : 'Add your professional certifications and qualifications'}</p>
             </CardHeader>
             <CardContent className="space-y-4">
               {/* Add Certification */}

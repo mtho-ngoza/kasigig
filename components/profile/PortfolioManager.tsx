@@ -8,6 +8,7 @@ import { useAuth } from '@/contexts/AuthContext'
 import { ProfileService } from '@/lib/database/profileService'
 import { PortfolioItem } from '@/types/auth'
 import { isInformalWorker, getProfileSectionConfig } from '@/lib/utils/userProfile'
+import { useToast } from '@/contexts/ToastContext'
 
 interface PortfolioManagerProps {
   onBack?: () => void
@@ -45,6 +46,7 @@ const INFORMAL_WORK_CATEGORIES = [
 ]
 
 export default function PortfolioManager({ onBack }: PortfolioManagerProps) {
+  const { success, error: showError, warning } = useToast()
   const { user, refreshUser } = useAuth()
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isUploading, setIsUploading] = useState(false)
@@ -90,7 +92,7 @@ export default function PortfolioManager({ onBack }: PortfolioManagerProps) {
 
     // Validate file type
     if (!file.type.startsWith('image/')) {
-      alert('Please select an image file.')
+      warning('Please select an image file.')
       return
     }
 
@@ -107,7 +109,7 @@ export default function PortfolioManager({ onBack }: PortfolioManagerProps) {
     e.preventDefault()
 
     if (!formData.title.trim() || !formData.description.trim() || !formData.category) {
-      alert('Please fill in all required fields.')
+      warning('Please fill in all required fields.')
       return
     }
 
@@ -123,7 +125,7 @@ export default function PortfolioManager({ onBack }: PortfolioManagerProps) {
         setIsUploading(false)
       }
 
-      const portfolioData: Record<string, unknown> = {
+      const portfolioData: Omit<PortfolioItem, 'id'> = {
         title: formData.title.trim(),
         description: formData.description.trim(),
         category: formData.category,
@@ -153,8 +155,8 @@ export default function PortfolioManager({ onBack }: PortfolioManagerProps) {
 
       alert(`Portfolio item ${editingItem ? 'updated' : 'added'} successfully!`)
       resetForm()
-    } catch (error) {
-      console.error('Error saving portfolio item:', error)
+    } catch (err) {
+      console.error('Error saving portfolio item:', err)
       alert(`Failed to ${editingItem ? 'update' : 'add'} portfolio item. Please try again.`)
     } finally {
       setIsSubmitting(false)
@@ -185,10 +187,10 @@ export default function PortfolioManager({ onBack }: PortfolioManagerProps) {
       await ProfileService.deletePortfolioItem(user.id, item.id)
       await ProfileService.updateProfileCompleteness(user.id)
       await refreshUser()
-      alert('Portfolio item deleted successfully!')
-    } catch (error) {
-      console.error('Error deleting portfolio item:', error)
-      alert('Failed to delete portfolio item. Please try again.')
+      success('Portfolio item deleted successfully!')
+    } catch (err) {
+      console.error('Error deleting portfolio item:', err)
+      showError('Failed to delete portfolio item. Please try again.')
     }
   }
 
@@ -218,7 +220,7 @@ export default function PortfolioManager({ onBack }: PortfolioManagerProps) {
               onClick={() => setShowAddForm(true)}
               disabled={showAddForm}
             >
-              {config?.addItemText || 'Add Portfolio Item'}
+              Add {isInformal ? 'Experience' : 'Portfolio Item'}
             </Button>
           </div>
         </div>
@@ -389,10 +391,13 @@ export default function PortfolioManager({ onBack }: PortfolioManagerProps) {
                 <span className="text-2xl">💼</span>
               </div>
               <h3 className="text-xl font-semibold text-gray-900 mb-4">
-                {config?.emptyTitle || 'No Portfolio Items Yet'}
+                No {isInformal ? 'Experience' : 'Portfolio Items'} Yet
               </h3>
               <p className="text-gray-600 mb-6 max-w-md mx-auto">
-                {config?.emptyDescription || 'Start building your portfolio by adding your best work. This helps clients see what you can deliver.'}
+                {isInformal
+                  ? 'Add your work experience to help clients understand your skills and background.'
+                  : 'Start building your portfolio by adding your best work. This helps clients see what you can deliver.'
+                }
               </p>
               <Button onClick={() => setShowAddForm(true)}>
                 {isInformal ? 'Add Your First Work Example' : 'Add Your First Portfolio Item'}

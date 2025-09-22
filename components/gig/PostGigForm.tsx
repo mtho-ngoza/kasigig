@@ -6,6 +6,7 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card'
 import { Input } from '@/components/ui/Input'
 import { GigService } from '@/lib/database/gigService'
 import { useAuth } from '@/contexts/AuthContext'
+import { useToast } from '@/contexts/ToastContext'
 
 interface PostGigFormProps {
   onSuccess?: () => void
@@ -68,6 +69,7 @@ const SA_LOCATIONS = [
 ]
 
 export default function PostGigForm({ onSuccess, onCancel }: PostGigFormProps) {
+  const { success, error: showError, warning } = useToast()
   const { user } = useAuth()
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [errors, setErrors] = useState<Partial<GigFormData>>({})
@@ -183,7 +185,7 @@ export default function PostGigForm({ onSuccess, onCancel }: PostGigFormProps) {
     e.preventDefault()
 
     if (!user) {
-      alert('You must be logged in to post a gig')
+      showError('You must be logged in to post a gig')
       return
     }
 
@@ -227,7 +229,7 @@ export default function PostGigForm({ onSuccess, onCancel }: PostGigFormProps) {
       if (onSuccess) {
         onSuccess()
       } else {
-        alert('Gig posted successfully!')
+        success('Gig posted successfully!')
         setFormData({
           title: '',
           description: '',
@@ -241,7 +243,7 @@ export default function PostGigForm({ onSuccess, onCancel }: PostGigFormProps) {
       }
     } catch (error) {
       console.error('Error posting gig:', error)
-      alert('Failed to post gig. Please try again.')
+      showError('Failed to post gig. Please try again.')
     } finally {
       setIsSubmitting(false)
     }

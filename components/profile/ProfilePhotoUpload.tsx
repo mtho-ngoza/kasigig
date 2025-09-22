@@ -6,12 +6,14 @@ import { Button } from '@/components/ui/Button'
 import { useAuth } from '@/contexts/AuthContext'
 import { ProfileService } from '@/lib/database/profileService'
 import { getProfileSectionConfig, isInformalWorker } from '@/lib/utils/userProfile'
+import { useToast } from '@/contexts/ToastContext'
 
 interface ProfilePhotoUploadProps {
   onBack?: () => void
 }
 
 export default function ProfilePhotoUpload({ onBack }: ProfilePhotoUploadProps) {
+  const { success, error: showError, warning } = useToast()
   const { user, refreshUser } = useAuth()
   const [isUploading, setIsUploading] = useState(false)
   const [previewUrl, setPreviewUrl] = useState<string | null>(null)
@@ -29,7 +31,7 @@ export default function ProfilePhotoUpload({ onBack }: ProfilePhotoUploadProps) 
 
     // Validate file type
     if (!file.type.startsWith('image/')) {
-      alert('Please select an image file.')
+      warning('Please select an image file.')
       return
     }
 
@@ -62,9 +64,9 @@ export default function ProfilePhotoUpload({ onBack }: ProfilePhotoUploadProps) 
       setPreviewUrl(null)
 
       if (onBack) onBack()
-    } catch (error) {
-      console.error('Error uploading profile photo:', error)
-      alert('Failed to upload profile photo. Please try again.')
+    } catch (err) {
+      console.error('Error uploading profile photo:', err)
+      showError('Failed to upload profile photo. Please try again.')
     } finally {
       setIsUploading(false)
     }
@@ -161,17 +163,11 @@ export default function ProfilePhotoUpload({ onBack }: ProfilePhotoUploadProps) 
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
               <h4 className="font-semibold text-blue-800 mb-2">📋 {isInformal ? 'Photo Tips' : 'Photo Guidelines'}</h4>
               <ul className="text-sm text-blue-700 space-y-1">
-                {config?.guidelines?.map((guideline, index) => (
-                  <li key={index}>• {guideline}</li>
-                )) || (
-                  <>
-                    <li>• Use a clear, well-lit photo of your face</li>
-                    <li>• Look professional and approachable</li>
-                    <li>• Avoid group photos, selfies, or distracting backgrounds</li>
-                    <li>• Make sure you&apos;re looking directly at the camera</li>
-                    <li>• Keep it recent (within the last 2 years)</li>
-                  </>
-                )}
+                <li>• Use a clear, well-lit photo of your face</li>
+                <li>• Look professional and approachable</li>
+                <li>• Avoid group photos, selfies, or distracting backgrounds</li>
+                <li>• Make sure you&apos;re looking directly at the camera</li>
+                <li>• Keep it recent (within the last 2 years)</li>
               </ul>
             </div>
 

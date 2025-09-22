@@ -7,6 +7,10 @@ import { User } from '@/types/auth'
 import { Button } from '@/components/ui/Button'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card'
 import ApplicationForm from '@/components/application/ApplicationForm'
+import { QuickMessageButton } from '@/components/messaging/QuickMessageButton'
+import { MessageIndicator } from '@/components/messaging/MessageIndicator'
+import { useToast } from '@/contexts/ToastContext'
+import { useMessaging } from '@/contexts/MessagingContext'
 
 interface PublicGigBrowserProps {
   onSignUpClick: () => void
@@ -14,6 +18,8 @@ interface PublicGigBrowserProps {
   showAuthButtons?: boolean
   onDashboardClick?: () => void
   currentUser?: User | null
+  onMessageConversationStart?: (conversationId: string) => void
+  onMessagesClick?: () => void
 }
 
 export default function PublicGigBrowser({
@@ -21,8 +27,12 @@ export default function PublicGigBrowser({
   onLoginClick,
   showAuthButtons = true,
   onDashboardClick,
-  currentUser
+  currentUser,
+  onMessageConversationStart,
+  onMessagesClick
 }: PublicGigBrowserProps) {
+  const { success, error } = useToast()
+  const { totalUnreadCount } = useMessaging()
   const [gigs, setGigs] = useState<Gig[]>([])
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
@@ -235,7 +245,7 @@ export default function PublicGigBrowser({
     }
 
     if (currentUser.userType !== 'job-seeker') {
-      alert('Only job seekers can apply for gigs.')
+      error('Only job seekers can apply for gigs.')
       return
     }
 
@@ -246,7 +256,7 @@ export default function PublicGigBrowser({
   const handleApplicationSuccess = () => {
     setShowApplicationForm(false)
     setSelectedGig(null)
-    alert('Application submitted successfully! You can track your applications in your dashboard.')
+    success('Application submitted successfully! You can track your applications in your dashboard.')
   }
 
   const handleApplicationCancel = () => {
@@ -271,6 +281,9 @@ export default function PublicGigBrowser({
             <div className="flex items-center space-x-3">
               {currentUser ? (
                 <>
+                  <MessageIndicator
+                    onConversationStart={onMessageConversationStart}
+                  />
                   <span className="text-sm text-gray-600 hidden sm:block">
                     Welcome, {currentUser.firstName}
                   </span>
@@ -436,12 +449,26 @@ export default function PublicGigBrowser({
                     <span className="text-sm text-gray-500">
                       {gig.applicants?.length || 0} applicants
                     </span>
-                    <Button
-                      size="sm"
-                      onClick={() => handleApplyClick(gig)}
-                    >
-                      {currentUser ? 'Apply' : 'Apply Now'}
-                    </Button>
+                    <div className="flex items-center space-x-2">
+                      {currentUser && currentUser.id !== gig.employerId && (
+                        <QuickMessageButton
+                          recipientId={gig.employerId}
+                          recipientName={gig.employerName}
+                          recipientType="employer"
+                          gigId={gig.id}
+                          gigTitle={gig.title}
+                          size="sm"
+                          variant="outline"
+                          onConversationStart={onMessageConversationStart}
+                        />
+                      )}
+                      <Button
+                        size="sm"
+                        onClick={() => handleApplyClick(gig)}
+                      >
+                        {currentUser ? 'Apply' : 'Apply Now'}
+                      </Button>
+                    </div>
                   </div>
                 </CardContent>
               </Card>

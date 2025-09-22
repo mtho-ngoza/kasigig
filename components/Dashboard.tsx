@@ -1,21 +1,37 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
+import { useMessaging } from '@/contexts/MessagingContext'
 import { Button } from '@/components/ui/Button'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card'
 import PostGigPage from './gig/PostGigPage'
 import MyApplications from './application/MyApplications'
 import ManageApplications from './application/ManageApplications'
 import ProfileManagement from './profile/ProfileManagement'
+import { MessagingHub } from './messaging/MessagingHub'
 
 interface DashboardProps {
   onBrowseGigs?: () => void
+  initialMessageConversationId?: string
+  onMessageConversationStart?: (conversationId: string) => void
 }
 
-export default function Dashboard({ onBrowseGigs }: DashboardProps) {
+export default function Dashboard({
+  onBrowseGigs,
+  initialMessageConversationId,
+  onMessageConversationStart
+}: DashboardProps) {
   const { user, logout } = useAuth()
-  const [currentView, setCurrentView] = useState<'dashboard' | 'post-gig' | 'my-applications' | 'manage-applications' | 'profile'>('dashboard')
+  const { totalUnreadCount } = useMessaging()
+  const [currentView, setCurrentView] = useState<'dashboard' | 'post-gig' | 'my-applications' | 'manage-applications' | 'profile' | 'messages'>('dashboard')
+
+  // Auto-navigate to messages if conversationId is provided
+  useEffect(() => {
+    if (initialMessageConversationId) {
+      setCurrentView('messages')
+    }
+  }, [initialMessageConversationId])
 
   // Show post gig page if user is on that view
   if (currentView === 'post-gig') {
@@ -24,7 +40,14 @@ export default function Dashboard({ onBrowseGigs }: DashboardProps) {
 
   // Show my applications page if user is on that view
   if (currentView === 'my-applications') {
-    return <MyApplications onBack={() => setCurrentView('dashboard')} />
+    return (
+      <MyApplications
+        onBack={() => setCurrentView('dashboard')}
+        onBrowseGigs={onBrowseGigs}
+        onMessageConversationStart={onMessageConversationStart}
+        onMessagesClick={() => setCurrentView('messages')}
+      />
+    )
   }
 
   // Show manage applications page if user is on that view
@@ -35,6 +58,42 @@ export default function Dashboard({ onBrowseGigs }: DashboardProps) {
   // Show profile management page if user is on that view
   if (currentView === 'profile') {
     return <ProfileManagement onBack={() => setCurrentView('dashboard')} />
+  }
+
+  // Show messaging page if user is on that view
+  if (currentView === 'messages') {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <header className="bg-white shadow-sm border-b">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="flex justify-between items-center h-16">
+              <div className="flex items-center space-x-6">
+                <Button variant="ghost" onClick={() => setCurrentView('dashboard')} className="text-sm">
+                  ← Back to Dashboard
+                </Button>
+                <h1 className="text-xl font-semibold text-gray-900">Messages</h1>
+              </div>
+              <div className="flex items-center space-x-4">
+                <span className="text-sm text-gray-700">
+                  Welcome, {user?.firstName} {user?.lastName}
+                </span>
+                <Button variant="outline" onClick={logout}>
+                  Sign Out
+                </Button>
+              </div>
+            </div>
+          </div>
+        </header>
+        <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+          <div className="px-4 py-6 sm:px-0">
+            <MessagingHub
+              className="h-[600px]"
+              initialConversationId={initialMessageConversationId}
+            />
+          </div>
+        </main>
+      </div>
+    )
   }
 
   return (
@@ -54,6 +113,20 @@ export default function Dashboard({ onBrowseGigs }: DashboardProps) {
               )}
             </div>
             <div className="flex items-center space-x-4">
+              <Button
+                variant="ghost"
+                onClick={() => setCurrentView('messages')}
+                className="relative"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                </svg>
+                {totalUnreadCount > 0 && (
+                  <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+                    {totalUnreadCount > 9 ? '9+' : totalUnreadCount}
+                  </span>
+                )}
+              </Button>
               <span className="text-sm text-gray-700">
                 Welcome, {user?.firstName} {user?.lastName}
               </span>
@@ -115,7 +188,7 @@ export default function Dashboard({ onBrowseGigs }: DashboardProps) {
                 <CardTitle>Quick Actions</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
                   {user?.userType === 'job-seeker' ? (
                     <>
                       <Button
@@ -138,6 +211,18 @@ export default function Dashboard({ onBrowseGigs }: DashboardProps) {
                       >
                         My Applications
                       </Button>
+                      <Button
+                        variant="outline"
+                        className="w-full relative"
+                        onClick={() => setCurrentView('messages')}
+                      >
+                        Messages
+                        {totalUnreadCount > 0 && (
+                          <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-4 w-4 flex items-center justify-center">
+                            {totalUnreadCount > 9 ? '9+' : totalUnreadCount}
+                          </span>
+                        )}
+                      </Button>
                       <Button variant="outline" className="w-full">Skill Assessment</Button>
                     </>
                   ) : (
@@ -155,6 +240,18 @@ export default function Dashboard({ onBrowseGigs }: DashboardProps) {
                         onClick={() => setCurrentView('manage-applications')}
                       >
                         View Applications
+                      </Button>
+                      <Button
+                        variant="outline"
+                        className="w-full relative"
+                        onClick={() => setCurrentView('messages')}
+                      >
+                        Messages
+                        {totalUnreadCount > 0 && (
+                          <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-4 w-4 flex items-center justify-center">
+                            {totalUnreadCount > 9 ? '9+' : totalUnreadCount}
+                          </span>
+                        )}
                       </Button>
                       <Button
                         variant="outline"

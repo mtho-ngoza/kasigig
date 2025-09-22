@@ -11,6 +11,7 @@ type PageView = 'browse' | 'auth' | 'dashboard'
 export default function Home() {
   const { user, isLoading } = useAuth()
   const [currentView, setCurrentView] = useState<PageView>('browse')
+  const [messageConversationId, setMessageConversationId] = useState<string | undefined>(undefined)
 
   if (isLoading) {
     return (
@@ -44,6 +45,11 @@ export default function Home() {
       return (
         <Dashboard
           onBrowseGigs={() => setCurrentView('browse')}
+          initialMessageConversationId={messageConversationId}
+          onMessageConversationStart={(conversationId) => {
+            setMessageConversationId(conversationId)
+            setCurrentView('dashboard')
+          }}
         />
       )
 
@@ -56,6 +62,11 @@ export default function Home() {
           showAuthButtons={!user}
           onDashboardClick={user ? () => setCurrentView('dashboard') : undefined}
           currentUser={user}
+          onMessageConversationStart={(conversationId) => {
+            setMessageConversationId(conversationId)
+            setCurrentView('dashboard')
+          }}
+          onMessagesClick={user ? () => setCurrentView('dashboard') : undefined}
         />
       )
   }
