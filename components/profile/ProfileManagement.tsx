@@ -11,12 +11,14 @@ import PortfolioManager from './PortfolioManager'
 import ExperienceForm from './ExperienceForm'
 import ProfileCompleteness from './ProfileCompleteness'
 import { isInformalWorker, getProfileSectionIcon } from '@/lib/utils/userProfile'
+import SafetyPreferencesManager from '@/components/safety/SafetyPreferencesManager'
+import { TrustScoreBadge, VerificationBadge } from '@/components/safety/TrustScoreBadge'
 
 interface ProfileManagementProps {
   onBack?: () => void
 }
 
-type ProfileSection = 'overview' | 'basic' | 'photo' | 'skills' | 'portfolio' | 'experience'
+type ProfileSection = 'overview' | 'basic' | 'photo' | 'skills' | 'portfolio' | 'experience' | 'safety'
 
 export default function ProfileManagement({ onBack }: ProfileManagementProps) {
   const { user } = useAuth()
@@ -58,6 +60,11 @@ export default function ProfileManagement({ onBack }: ProfileManagementProps) {
       id: 'experience' as const,
       name: isInformal ? 'Experience & Rates' : 'Experience',
       icon: getProfileSectionIcon('experience', isInformal)
+    },
+    {
+      id: 'safety' as const,
+      name: isInformal ? 'Safety & Security' : 'Safety Preferences',
+      icon: '🛡️'
     }
   ]
 
@@ -73,6 +80,8 @@ export default function ProfileManagement({ onBack }: ProfileManagementProps) {
         return <PortfolioManager onBack={() => setCurrentSection('overview')} />
       case 'experience':
         return <ExperienceForm onBack={() => setCurrentSection('overview')} />
+      case 'safety':
+        return <SafetyPreferencesManager onBack={() => setCurrentSection('overview')} />
       default:
         return null
     }
@@ -145,6 +154,10 @@ export default function ProfileManagement({ onBack }: ProfileManagementProps) {
                     ? 'Tell people how long you\'ve been doing this work and what you charge'
                     : 'Add your work experience, education, and hourly rate'
                   )}
+                  {section.id === 'safety' && (isInformal
+                    ? 'Stay safe while working - add emergency contacts and safety preferences'
+                    : 'Configure safety preferences, emergency contacts, and verification settings'
+                  )}
                 </div>
                 <Button variant="outline" size="sm">
                   Manage →
@@ -183,12 +196,18 @@ export default function ProfileManagement({ onBack }: ProfileManagementProps) {
 
                 {/* Basic Info */}
                 <div className="flex-1">
-                  <h3 className="text-xl font-semibold text-gray-900">
-                    {user.firstName} {user.lastName}
-                    {user.isVerified && (
-                      <span className="ml-2 text-green-600">✓</span>
-                    )}
-                  </h3>
+                  <div className="flex items-center space-x-3 mb-2">
+                    <h3 className="text-xl font-semibold text-gray-900">
+                      {user.firstName} {user.lastName}
+                    </h3>
+                    <VerificationBadge
+                      level={user.verificationLevel || (user.isVerified ? 'basic' : 'none')}
+                      size="sm"
+                    />
+                  </div>
+                  <div className="mb-2">
+                    <TrustScoreBadge score={user.trustScore || 50} size="sm" />
+                  </div>
                   <p className="text-gray-600 mb-2">{user.location}</p>
                   {user.bio && (
                     <p className="text-gray-700 mb-3">{user.bio}</p>

@@ -1,5 +1,38 @@
 import { Coordinates, UserLocation, LocationPreferences } from './location'
 
+export interface EmergencyContact {
+  id: string
+  name: string
+  phone: string
+  relationship: string
+  isPrimary: boolean
+  createdAt: Date
+}
+
+export interface SafetyPreferences {
+  emergencyContacts: EmergencyContact[]
+  preferredMeetingTypes: 'public_only' | 'any'
+  shareLocationWithContacts: boolean
+  allowCheckInReminders: boolean
+  allowSafetyNotifications: boolean
+}
+
+export interface VerificationDocument {
+  id: string
+  type: 'sa_id' | 'passport' | 'drivers_license' | 'proof_of_address' | 'bank_statement' | 'employment_letter' | 'reference_letter'
+  verificationLevel: 'basic' | 'enhanced' | 'premium'
+  status: 'draft' | 'pending' | 'verified' | 'rejected'
+  fileName: string
+  fileUrl: string
+  fileSize: number
+  mimeType: string
+  submittedAt: Date
+  verifiedAt?: Date
+  rejectedAt?: Date
+  notes?: string
+  reviewedBy?: string
+}
+
 export interface User {
   id: string
   email: string
@@ -37,6 +70,8 @@ export interface User {
   backgroundCheckStatus?: 'none' | 'pending' | 'verified' | 'failed'
   trustScore?: number
   safetyPreferences?: SafetyPreferences
+  verificationDocuments?: VerificationDocument[]
+  lastSafetyUpdate?: Date
   createdAt: Date
   updatedAt?: Date
 }
