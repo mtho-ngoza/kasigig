@@ -52,6 +52,69 @@ export function RegisterForm() {
     if (!formData.phone) newErrors.phone = 'Phone number is required'
     if (!formData.location) newErrors.location = 'Location is required'
 
+    // ID Number validation
+    if (!formData.idNumber) {
+      newErrors.idNumber = 'SA ID Number is required'
+    } else if (!/^\d{13}$/.test(formData.idNumber.replace(/\s/g, ''))) {
+      newErrors.idNumber = 'ID Number must be exactly 13 digits'
+    } else {
+      // SA ID number checksum validation (South African algorithm)
+      const cleanId = formData.idNumber.replace(/\s/g, '')
+      const digits = cleanId.substring(0, 12).split('').map(Number)
+      const checkDigit = parseInt(cleanId.charAt(12))
+
+      // Sum digits at odd positions (1st, 3rd, 5th, etc.)
+      let sumOdd = 0
+      for (let i = 0; i < 12; i += 2) {
+        sumOdd += digits[i]
+      }
+
+      // Concatenate digits at even positions (2nd, 4th, 6th, etc.)
+      let evenDigits = ''
+      for (let i = 1; i < 12; i += 2) {
+        evenDigits += digits[i]
+      }
+
+      // Multiply concatenated even digits by 2
+      const evenNumber = parseInt(evenDigits) * 2
+
+      // Sum the digits of the result
+      let sumEvenProcessed = 0
+      const evenStr = evenNumber.toString()
+      for (let i = 0; i < evenStr.length; i++) {
+        sumEvenProcessed += parseInt(evenStr.charAt(i))
+      }
+
+      // Calculate check digit
+      const totalSum = sumOdd + sumEvenProcessed
+      const calculatedCheckDigit = (10 - (totalSum % 10)) % 10
+
+      if (calculatedCheckDigit !== checkDigit) {
+        newErrors.idNumber = 'Invalid SA ID Number - please check the digits'
+      } else {
+        // Check if date is valid
+        const year = parseInt(cleanId.substring(0, 2))
+        const month = parseInt(cleanId.substring(2, 4))
+        const day = parseInt(cleanId.substring(4, 6))
+        const currentYear = new Date().getFullYear()
+        const fullYear = year + (year <= (currentYear % 100) ? 2000 : 1900)
+        const dateOfBirth = new Date(fullYear, month - 1, day)
+
+        if (dateOfBirth.getFullYear() !== fullYear ||
+            dateOfBirth.getMonth() !== month - 1 ||
+            dateOfBirth.getDate() !== day ||
+            dateOfBirth > new Date()) {
+          newErrors.idNumber = 'Invalid date in ID Number'
+        }
+
+        // Check minimum age (16 years)
+        const age = Math.floor((Date.now() - dateOfBirth.getTime()) / (1000 * 60 * 60 * 24 * 365.25))
+        if (age < 16) {
+          newErrors.idNumber = 'You must be at least 16 years old to register'
+        }
+      }
+    }
+
     setErrors(newErrors)
     return Object.keys(newErrors).length === 0
   }
@@ -177,14 +240,21 @@ export function RegisterForm() {
         </div>
       )}
 
-      <Input
-        label="ID Number (Optional)"
-        name="idNumber"
-        value={formData.idNumber}
-        onChange={handleChange}
-        error={errors.idNumber}
-        placeholder="South African ID Number"
-      />
+      <div className="space-y-1">
+        <Input
+          label="South African ID Number"
+          name="idNumber"
+          value={formData.idNumber}
+          onChange={handleChange}
+          error={errors.idNumber}
+          placeholder="13-digit SA ID Number (e.g., 8001015009082)"
+          required
+        />
+        <p className="text-xs text-gray-600">
+          Required for identity verification and trust building on the platform.
+          Your ID number is encrypted and stored securely.
+        </p>
+      </div>
 
       {message && (
         <div className={`p-3 rounded-md text-sm ${

@@ -109,5 +109,5 @@ export interface RegisterData {
   coordinates?: Coordinates
   userType: 'job-seeker' | 'employer'
   workSector?: 'professional' | 'informal'
-  idNumber?: string
+  idNumber: string
 }

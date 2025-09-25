@@ -13,8 +13,10 @@ GigSA empowers all South Africans - from informal sector workers to professional
 
 ## 🚀 Current Status
 
-**✅ Full-Featured Gig Economy Platform with Mobile PWA!**
+**✅ Full-Featured Gig Economy Platform with Trust & Safety System!**
 - Complete application system with gig posting, applications, and tracking
+- **🆔 ID Verification System**: Automated SA ID verification with OCR technology
+- **🛡️ Trust Score**: Dynamic scoring based on verifications and activity
 - Comprehensive profile management with portfolio uploads and photo capabilities
 - Real-time messaging system with conversation archiving
 - Mobile-first navigation with PWA installation support
@@ -80,6 +82,14 @@ GigSA empowers all South Africans - from informal sector workers to professional
 - **🔄 Auto-scroll & Real-time Updates**: Seamless message delivery and display
 - **📦 Archive Conversations**: Archive/unarchive conversations for better organization
 
+#### **Trust & Safety System**
+- **🆔 Automated ID Verification**: OCR-powered SA ID document verification with Google Vision API
+- **🔍 Name Cross-Reference**: Intelligent matching between profile and ID document names
+- **🛡️ Trust Score System**: Dynamic scoring based on verifications, reviews, and platform activity
+- **📊 Verification Center**: User-friendly verification dashboard with progress tracking
+- **⚡ Instant Verification**: Real-time document processing with immediate feedback
+- **🔒 Secure Processing**: Server-side OCR processing with no document storage
+
 #### **Mobile Navigation & PWA Features**
 - **📱 Mobile Hamburger Menu**: Responsive slide-out navigation with smooth animations
 - **👆 Enhanced Touch Interactions**: 44px touch targets with active state feedback
@@ -95,8 +105,25 @@ GigSA empowers all South Africans - from informal sector workers to professional
 
 ### 🚧 **Planned Features** (Next Development Phase)
 
-#### **Safety & Inclusion (Priority)**
-- **🛡️ Progressive Verification**: ID verification system with subsidized background checks for informal workers
+#### **Payment System (Next Priority)**
+- **💳 Payment Integration**: Secure payment processing with escrow for completed work
+- **💰 Milestone Payments**: Support for project-based and hourly payment structures
+- **🏦 Bank Integration**: Direct deposit and mobile money support for SA market
+- **📊 Payment Analytics**: Earnings tracking and financial reporting
+
+#### **Enhanced Verification (Coming Q2 2025)**
+- **🛡️ Enhanced Background Checks**: Criminal record checks and address verification
+- **📋 Employment History**: Work history verification with references
+- **🎓 Skills Assessment**: Optional skills testing and certification
+- **💰 Subsidized Verification**: Reduced costs for informal sector workers
+
+#### **Premium Features (Coming Q3 2025)**
+- **🔍 Comprehensive Verification**: Full background and professional reference checks
+- **⭐ Premium Trust Score**: Highest tier verification with maximum trust benefits
+- **🎯 Priority Placement**: Enhanced visibility in search results
+- **💼 Professional Services**: Access to premium gig categories
+
+#### **Safety & Community Enhancement**
 - **👥 Emergency Contacts**: Safety network linking to family/friends for all users
 - **📍 Safe Meeting Locations**: Public space recommendations for secure gig meetings
 - **🆘 Check-in System**: Simple safety notifications during active gigs
@@ -105,7 +132,6 @@ GigSA empowers all South Africans - from informal sector workers to professional
 - **🌍 Multi-language Support**: Safety and skills content in SA's major languages
 
 #### **Platform Enhancement**
-- **💳 Payment Integration**: Secure payment processing with escrow for completed work
 - **⭐ Review System**: Rating and feedback system for completed gigs
 - **🔍 Advanced Search**: Location-based matching with safety zone filtering
 - **📊 Impact Analytics**: Employment outcome tracking and skills development metrics
@@ -113,7 +139,6 @@ GigSA empowers all South Africans - from informal sector workers to professional
 - **📧 Community Integration**: Optional community safety networks and peer support
 - **📱 Mobile App**: React Native app optimized for entry-level smartphones
 - **🗺️ Location Services**: GPS-based matching with community safety mapping
-- **📄 Document Upload**: Accessible ID verification and skills certification
 - **🏆 Skills Verification**: Badges and micro-credentials for employability
 
 ## 🛠 Tech Stack
@@ -155,14 +180,22 @@ npm install
    - Configure Storage CORS for development (see `cors.json` in project root)
 
 4. **Set up environment variables**
-Copy `.env.local.example` to `.env.local` and add your Firebase config:
+Copy `.env.example` to `.env.local` and add your Firebase config:
 ```env
+# Firebase Configuration (Required)
 NEXT_PUBLIC_FIREBASE_API_KEY=your_api_key
 NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=your_project.firebaseapp.com
 NEXT_PUBLIC_FIREBASE_PROJECT_ID=your_project_id
 NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=your_project.appspot.com
 NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=your_sender_id
 NEXT_PUBLIC_FIREBASE_APP_ID=your_app_id
+
+# Google Vision API for ID Verification (Optional - fallback will be used)
+GOOGLE_CLOUD_API_KEY=your_google_vision_api_key_here
+
+# OCR Configuration (Optional)
+OCR_ENABLED=true
+OCR_CONFIDENCE_THRESHOLD=70
 ```
 
 5. **Run the development server**
@@ -187,10 +220,16 @@ npm run dev
 │   ├── auth/                     # Authentication UI
 │   │   ├── AuthPage.tsx          # Login/signup page
 │   │   ├── LoginForm.tsx         # Login form component
-│   │   └── RegisterForm.tsx      # Registration form with work sector selection
+│   │   └── RegisterForm.tsx      # Registration form with SA ID validation
 │   ├── gig/                      # Gig management components
 │   │   ├── PostGigForm.tsx       # Context-aware gig posting form
 │   │   └── PostGigPage.tsx       # Gig posting with success flow
+│   ├── safety/                   # Trust & Safety components
+│   │   ├── VerificationCenter.tsx # Main verification dashboard
+│   │   ├── DocumentVerificationFlow.tsx # ID verification process
+│   │   ├── DocumentUpload.tsx    # Document upload with validation
+│   │   ├── TrustScoreBadge.tsx   # Trust score display components
+│   │   └── SafetyDashboard.tsx   # Safety features overview
 │   ├── layout/                   # Layout and navigation components
 │   │   ├── AppLayout.tsx         # Main application layout with navigation
 │   │   ├── GlobalHeader.tsx      # Global header with mobile menu integration
@@ -231,6 +270,11 @@ npm run dev
 │   │   ├── gigService.ts         # Gig and application operations
 │   │   ├── profileService.ts     # Profile and file upload operations
 │   │   └── messagingService.ts   # Real-time messaging operations
+│   ├── services/                 # Business logic services
+│   │   ├── simpleIdVerification.ts # Core ID verification logic
+│   │   ├── ocrService.ts         # OCR text extraction service
+│   │   ├── securityService.ts    # Trust score and security features
+│   │   └── documentStorageService.ts # Document upload and storage
 │   ├── utils/                    # Utility functions
 │   │   └── userProfile.ts        # Context-aware profile configuration
 │   └── firebase.ts               # Firebase configuration with Storage
@@ -305,13 +349,23 @@ npm run dev
 20. **Conversation persistence**: Refresh page to verify messages are saved
 21. **Archive conversations**: Test archive/unarchive functionality in messaging hub
 
+### ID Verification System Testing
+22. **Basic verification flow**: Test complete ID verification from Safety Dashboard → Verification Center
+23. **OCR name matching**: Upload SA ID document and verify automated name cross-reference
+24. **Document format validation**: Try uploading Word docs/text files to test rejection system
+25. **Profile name mismatch**: Test verification with deliberately mismatched profile/ID names
+26. **Trust score updates**: Verify trust score increases from 50 to 65+ after verification
+27. **Verification dashboard**: Navigate verification center and check "Coming Soon" features
+28. **Required ID field**: Test that ID number is required during registration process
+29. **SA ID validation**: Test South African ID number format validation (13 digits + checksum)
+
 ### Mobile Navigation & PWA Testing
-22. **Mobile hamburger menu**: Test slide-out navigation on mobile devices (< 1024px width)
-23. **Touch interactions**: Experience enhanced touch feedback on mobile buttons and links
-24. **PWA installation**: Visit site on mobile Chrome/Safari to see "Add to Home Screen" prompt
-25. **Responsive layouts**: Test all components at different screen sizes (320px - 1920px)
-26. **Offline functionality**: Test basic offline capabilities after installation
-27. **Navigation breadcrumbs**: Use breadcrumbs for navigation across different pages
+30. **Mobile hamburger menu**: Test slide-out navigation on mobile devices (< 1024px width)
+31. **Touch interactions**: Experience enhanced touch feedback on mobile buttons and links
+32. **PWA installation**: Visit site on mobile Chrome/Safari to see "Add to Home Screen" prompt
+33. **Responsive layouts**: Test all components at different screen sizes (320px - 1920px)
+34. **Offline functionality**: Test basic offline capabilities after installation
+35. **Navigation breadcrumbs**: Use breadcrumbs for navigation across different pages
 
 ## 🔧 Development Commands
 
@@ -333,21 +387,21 @@ Ensure environment variables are configured in your deployment platform.
 
 ## 📋 Development Roadmap
 
-### High Priority (Youth Empowerment Focus)
-- [ ] **Progressive verification system** for youth safety and trust building
-- [ ] **Emergency contact integration** for family safety networks
-- [ ] **Safe meeting location suggestions** with public space recommendations
-- [ ] **Skills hub expansion** with youth development modules
+### High Priority (Payment Integration)
+- [ ] **Payment system integration** with escrow for completed work
+- [ ] **Milestone-based payments** for project-based and hourly work
+- [ ] **Bank integration** for direct deposits and mobile money
+- [ ] **Payment dashboard** for earnings tracking and financial reporting
 - [ ] **Firestore security rules** implementation for production
-- [ ] **Payment integration** with escrow for completed work
-
-### Medium Priority (Platform Enhancement)
-- [ ] **Background check integration** (subsidized for youth users)
-- [ ] **Check-in safety system** for active gigs
-- [ ] **Youth analytics dashboard** for employment impact tracking
 - [ ] **Review and rating system** with trust building features
+
+### Medium Priority (Enhanced Features)
+- [ ] **Enhanced verification rollout** (Q2 2025) with background checks
+- [ ] **Premium verification launch** (Q3 2025) with full reference checks
+- [ ] **Skills hub expansion** with micro-learning modules
 - [ ] **Advanced search filters** (location safety zones, skills matching)
-- [ ] **File upload system** for youth-friendly ID verification
+- [ ] **Emergency contact integration** for family safety networks
+- [ ] **Check-in safety system** for active gigs
 
 ### Future Enhancements (Scale & Impact)
 - [ ] **AI-powered safety monitoring** for platform interactions and risk assessment

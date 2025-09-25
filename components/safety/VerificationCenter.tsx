@@ -178,9 +178,14 @@ export default function VerificationCenter({ onBack }: VerificationCenterProps) 
           </CardContent>
         </Card>
 
-        {/* Enhanced Verification */}
-        <Card>
-          <CardContent className="p-6">
+        {/* Enhanced Verification - Coming Soon */}
+        <Card className="opacity-75">
+          <CardContent className="p-6 relative">
+            <div className="absolute top-4 right-4">
+              <span className="bg-blue-100 text-blue-800 text-xs font-medium px-2 py-1 rounded-full">
+                Coming Soon
+              </span>
+            </div>
             <div className="flex items-start justify-between">
               <div className="flex-1">
                 <div className="flex items-center space-x-3 mb-3">
@@ -190,55 +195,42 @@ export default function VerificationCenter({ onBack }: VerificationCenterProps) 
                     </svg>
                   </div>
                   <h3 className="text-lg font-semibold text-gray-900">Enhanced Verification</h3>
-                  {getVerificationLevel() === 'enhanced' && (
-                    <VerificationBadge level="enhanced" size="sm" />
-                  )}
                 </div>
                 <p className="text-gray-600 mb-4">
                   Background check and address verification. Subsidized for informal workers.
                 </p>
-                <ul className="text-sm text-gray-600 space-y-1">
-                  <li>✓ Criminal background check</li>
-                  <li>✓ Address verification</li>
-                  <li>✓ Identity document validation</li>
-                  <li>✓ +25 Trust Score points</li>
+                <ul className="text-sm text-gray-500 space-y-1">
+                  <li>• Criminal background check</li>
+                  <li>• Address verification</li>
+                  <li>• Identity document validation</li>
+                  <li>• +25 Trust Score points</li>
                 </ul>
                 <div className="mt-3 text-sm">
-                  <span className="text-green-600 font-medium">
-                    {user?.workSector === 'informal' ? 'Free for informal workers' : 'R150 (subsidized: R50)'}
+                  <span className="text-blue-600 font-medium">
+                    Launching Q2 2025 - {user?.workSector === 'informal' ? 'Free for informal workers' : 'R150 (subsidized: R50)'}
                   </span>
                 </div>
               </div>
               <div className="ml-6">
-                {getVerificationLevel() === 'none' ? (
-                  <div className="text-center">
-                    <div className="text-gray-400 font-medium mb-2">Complete Basic First</div>
-                    <Button disabled variant="outline">Locked</Button>
-                  </div>
-                ) : getVerificationLevel() === 'basic' ? (
-                  <Button
-                    onClick={() => handleVerificationStep('enhanced')}
-                    variant="outline"
-                  >
-                    Upgrade
+                <div className="text-center">
+                  <div className="text-blue-600 font-medium mb-2">Coming Soon</div>
+                  <Button disabled variant="outline" className="opacity-50">
+                    Notify Me
                   </Button>
-                ) : getVerificationLevel() === 'enhanced' ? (
-                  <div className="text-center">
-                    <div className="text-blue-600 font-medium">✓ Completed</div>
-                  </div>
-                ) : (
-                  <div className="text-center">
-                    <div className="text-blue-600 font-medium">✓ Completed</div>
-                  </div>
-                )}
+                </div>
               </div>
             </div>
           </CardContent>
         </Card>
 
-        {/* Premium Verification */}
-        <Card>
-          <CardContent className="p-6">
+        {/* Premium Verification - Coming Soon */}
+        <Card className="opacity-75">
+          <CardContent className="p-6 relative">
+            <div className="absolute top-4 right-4">
+              <span className="bg-purple-100 text-purple-800 text-xs font-medium px-2 py-1 rounded-full">
+                Coming Later
+              </span>
+            </div>
             <div className="flex items-start justify-between">
               <div className="flex-1">
                 <div className="flex items-center space-x-3 mb-3">
@@ -248,44 +240,30 @@ export default function VerificationCenter({ onBack }: VerificationCenterProps) 
                     </svg>
                   </div>
                   <h3 className="text-lg font-semibold text-gray-900">Premium Verification</h3>
-                  {getVerificationLevel() === 'premium' && (
-                    <VerificationBadge level="premium" size="sm" />
-                  )}
                 </div>
                 <p className="text-gray-600 mb-4">
                   Comprehensive verification with references and employment history.
                 </p>
-                <ul className="text-sm text-gray-600 space-y-1">
-                  <li>✓ Enhanced background check</li>
-                  <li>✓ Employment history verification</li>
-                  <li>✓ Professional references check</li>
-                  <li>✓ Skills assessment (optional)</li>
-                  <li>✓ +40 Trust Score points</li>
+                <ul className="text-sm text-gray-500 space-y-1">
+                  <li>• Enhanced background check</li>
+                  <li>• Employment history verification</li>
+                  <li>• Professional references check</li>
+                  <li>• Skills assessment (optional)</li>
+                  <li>• +40 Trust Score points</li>
                 </ul>
                 <div className="mt-3 text-sm">
                   <span className="text-purple-600 font-medium">
-                    {user?.workSector === 'informal' ? 'R200 (subsidized)' : 'R400'}
+                    Launching Q3 2025 - {user?.workSector === 'informal' ? 'R200 (subsidized)' : 'R400'}
                   </span>
                 </div>
               </div>
               <div className="ml-6">
-                {['none', 'basic'].includes(getVerificationLevel()) ? (
-                  <div className="text-center">
-                    <div className="text-gray-400 font-medium mb-2">Complete Enhanced First</div>
-                    <Button disabled variant="outline">Locked</Button>
-                  </div>
-                ) : getVerificationLevel() === 'enhanced' ? (
-                  <Button
-                    onClick={() => handleVerificationStep('premium')}
-                    variant="outline"
-                  >
-                    Upgrade
+                <div className="text-center">
+                  <div className="text-purple-600 font-medium mb-2">Coming Later</div>
+                  <Button disabled variant="outline" className="opacity-50">
+                    Notify Me
                   </Button>
-                ) : (
-                  <div className="text-center">
-                    <div className="text-purple-600 font-medium">✓ Completed</div>
-                  </div>
-                )}
+                </div>
               </div>
             </div>
           </CardContent>

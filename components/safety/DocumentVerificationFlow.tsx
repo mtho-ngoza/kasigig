@@ -6,11 +6,12 @@ import { Button } from '@/components/ui/Button'
 import { useAuth } from '@/contexts/AuthContext'
 import { useToast } from '@/contexts/ToastContext'
 import { DocumentStorageService } from '@/lib/services/documentStorageService'
+import { SimpleIdVerification } from '@/lib/services/simpleIdVerification'
 import { VerificationDocument } from '@/types/auth'
 import DocumentUpload from './DocumentUpload'
 
 interface DocumentVerificationFlowProps {
-  verificationLevel: 'basic' | 'enhanced' | 'premium'
+  verificationLevel: 'basic' // Only basic verification is currently supported
   onBack: () => void
   onComplete: () => void
 }
@@ -49,68 +50,24 @@ export default function DocumentVerificationFlow({
   const getRequiredDocuments = () => {
     const commonFormats = ['pdf', 'jpg', 'png']
 
-    switch (verificationLevel) {
-      case 'basic':
-        return [
-          {
-            type: 'sa_id' as const,
-            title: 'South African ID Document',
-            description: 'Upload a clear photo of your SA ID (both sides) or passport',
-            acceptedFormats: commonFormats,
-            maxSize: 10,
-            required: true
-          }
-        ]
-
-      case 'enhanced':
-        return [
-          {
-            type: 'proof_of_address' as const,
-            title: 'Proof of Address',
-            description: 'Recent utility bill, bank statement, or municipal bill (not older than 3 months)',
-            acceptedFormats: commonFormats,
-            maxSize: 10,
-            required: true
-          },
-          {
-            type: 'bank_statement' as const,
-            title: 'Bank Statement',
-            description: 'Latest bank statement for financial verification',
-            acceptedFormats: commonFormats,
-            maxSize: 10,
-            required: true
-          }
-        ]
-
-      case 'premium':
-        return [
-          {
-            type: 'employment_letter' as const,
-            title: 'Employment Letter',
-            description: 'Letter from current or recent employer, or business registration certificate',
-            acceptedFormats: commonFormats,
-            maxSize: 10,
-            required: true
-          },
-          {
-            type: 'reference_letter' as const,
-            title: 'Reference Letters',
-            description: 'At least 2 professional or character references',
-            acceptedFormats: commonFormats,
-            maxSize: 10,
-            required: true
-          }
-        ]
-
-      default:
-        return []
-    }
+    // Only basic verification is currently supported
+    // Enhanced and premium features will be added in future phases
+    return [
+      {
+        type: 'sa_id' as const,
+        title: 'South African ID Document',
+        description: 'Upload a clear photo of your SA ID (both sides) or passport',
+        acceptedFormats: commonFormats,
+        maxSize: 10,
+        required: true
+      }
+    ]
   }
 
   const handleDocumentUpload = async (documentType: string, documentData: VerificationDocument) => {
     try {
       // Document is already uploaded to Firebase Storage via DocumentStorageService
-      // Just update local state to reflect the new document
+      // Update local state to reflect the new document
       setDocuments(prev => {
         const existing = prev.findIndex(doc => doc.type === documentType)
         if (existing >= 0) {
@@ -165,25 +122,54 @@ export default function DocumentVerificationFlow({
     try {
       setIsSubmitting(true)
 
-      // Update all draft documents to pending status
+      // Process verification for all draft documents
       const draftDocuments = documents.filter(doc => doc.status === 'draft')
-      const updatePromises = draftDocuments.map(doc =>
-        DocumentStorageService.updateDocumentStatus(doc.id, 'pending', undefined, undefined)
-      )
+      let allVerified = true
+      let verificationResults: Array<{docId: string, status: string, message: string}> = []
 
-      await Promise.all(updatePromises)
+      for (const doc of draftDocuments) {
+        try {
+          const verificationResult = await SimpleIdVerification.processDocumentVerification(doc.id)
+          verificationResults.push({
+            docId: doc.id,
+            status: verificationResult.status,
+            message: verificationResult.message
+          })
 
-      // Update local state to reflect the status changes
-      setDocuments(prev =>
-        prev.map(doc =>
-          doc.status === 'draft'
-            ? { ...doc, status: 'pending' as const, submittedAt: new Date() }
-            : doc
-        )
-      )
+          if (verificationResult.status !== 'verified') {
+            allVerified = false
+          }
+        } catch (error) {
+          console.error(`Verification failed for document ${doc.id}:`, error)
+          verificationResults.push({
+            docId: doc.id,
+            status: 'rejected',
+            message: 'Verification system error - document rejected'
+          })
+          allVerified = false
+        }
+      }
 
-      success(`${verificationLevel.charAt(0).toUpperCase() + verificationLevel.slice(1)} verification submitted! You'll receive an email within 24-48 hours with the review results.`)
-      onComplete()
+      // Reload documents to get updated statuses
+      await loadExistingDocuments()
+
+      // Show results
+      const verifiedCount = verificationResults.filter(r => r.status === 'verified').length
+      const rejectedCount = verificationResults.filter(r => r.status === 'rejected').length
+
+      if (allVerified) {
+        success(`All documents verified successfully! Your ${verificationLevel} verification is complete. ✓`)
+        onComplete()
+      } else if (rejectedCount > 0) {
+        const rejectedMessages = verificationResults
+          .filter(r => r.status === 'rejected')
+          .map(r => r.message)
+          .join('; ')
+        showError(`${rejectedCount} document(s) rejected: ${rejectedMessages}. Please re-upload with valid documents.`)
+      } else {
+        success(`${verifiedCount} document(s) verified. Review process complete.`)
+        onComplete()
+      }
     } catch (error) {
       console.error('Error submitting for review:', error)
       showError('Failed to submit verification. Please try again.')
@@ -203,25 +189,11 @@ export default function DocumentVerificationFlow({
   )
 
   const getVerificationTitle = () => {
-    switch (verificationLevel) {
-      case 'basic': return 'Basic Identity Verification'
-      case 'enhanced': return 'Enhanced Background Check'
-      case 'premium': return 'Premium Verification with References'
-      default: return 'Document Verification'
-    }
+    return 'Basic Identity Verification'
   }
 
   const getVerificationDescription = () => {
-    switch (verificationLevel) {
-      case 'basic':
-        return 'Verify your identity with official South African documents. This helps employers trust you and gives you access to more opportunities.'
-      case 'enhanced':
-        return 'Enhanced verification includes address and financial checks. This significantly increases your trust score and access to higher-paying gigs.'
-      case 'premium':
-        return 'Premium verification includes comprehensive background checks and reference validation. This gives you the highest trust level on the platform.'
-      default:
-        return ''
-    }
+    return 'Verify your identity with official South African documents. This helps employers trust you and gives you access to more opportunities.'
   }
 
   if (isLoading) {
@@ -292,17 +264,59 @@ export default function DocumentVerificationFlow({
         ))}
       </div>
 
+      {/* Name Verification Warning */}
+      {allRequiredDocsUploaded && user && (
+        <Card className="border-yellow-200 bg-yellow-50">
+          <CardHeader>
+            <CardTitle className="text-yellow-800 flex items-center">
+              ⚠️ Important: Name Verification
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3 text-sm">
+              <p className="text-yellow-800">
+                <strong>Your Profile Name:</strong> {user.firstName} {user.lastName}
+              </p>
+              <p className="text-yellow-700">
+                Please ensure this <strong>exactly matches</strong> the name on your ID document.
+                Any mismatch will result in verification failure and may lead to account restrictions.
+              </p>
+              <div className="bg-yellow-100 p-3 rounded border">
+                <p className="text-yellow-800 font-medium">
+                  ✓ Names must match exactly (including spelling, order, and spacing)
+                </p>
+                <p className="text-yellow-800 font-medium">
+                  ✓ If your profile name is incorrect, update it before verification
+                </p>
+                <p className="text-yellow-800 font-medium">
+                  ✓ Middle names are optional but should match if included
+                </p>
+              </div>
+              {!user.idNumber && (
+                <div className="bg-red-100 border border-red-200 p-3 rounded">
+                  <p className="text-red-800 font-medium">
+                    ❌ Missing ID Number: Please add your ID number to your profile before verification.
+                  </p>
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Submit Button */}
       {allRequiredDocsUploaded && (
         <div className="flex justify-center pt-6">
           <Button
             onClick={handleSubmitForReview}
             isLoading={isSubmitting}
-            disabled={isSubmitting}
+            disabled={isSubmitting || !user?.idNumber}
             size="lg"
             className="px-8"
           >
-            {isSubmitting ? 'Submitting for Review...' : 'Submit for Review'}
+            {isSubmitting ? 'Processing Verification...' :
+             !user?.idNumber ? 'Add ID Number to Profile First' :
+             'I Confirm Names Match - Submit for Verification'}
           </Button>
         </div>
       )}
@@ -324,13 +338,13 @@ export default function DocumentVerificationFlow({
               <div className="w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 font-medium text-xs">
                 2
               </div>
-              <p>Our verification team will review your documents within 24-48 hours</p>
+              <p>Our system automatically verifies your documents using OCR technology</p>
             </div>
             <div className="flex items-start space-x-3">
               <div className="w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 font-medium text-xs">
                 3
               </div>
-              <p>You'll receive an email with the verification results and any next steps</p>
+              <p>You'll receive instant verification results or feedback if documents need improvement</p>
             </div>
             <div className="flex items-start space-x-3">
               <div className="w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 font-medium text-xs">
