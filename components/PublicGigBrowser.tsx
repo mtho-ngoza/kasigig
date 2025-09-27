@@ -11,6 +11,7 @@ import { QuickMessageButton } from '@/components/messaging/QuickMessageButton'
 import { useToast } from '@/contexts/ToastContext'
 import { useLocation } from '@/contexts/LocationContext'
 import { calculateDistance, formatDistance } from '@/lib/utils/locationUtils'
+import GigAmountDisplay from '@/components/gig/GigAmountDisplay'
 
 interface PublicGigBrowserProps {
   onSignUpClick: () => void
@@ -75,16 +76,12 @@ export default function PublicGigBrowser({
       if (!a.coordinates || !b.coordinates) return 0
 
       const distA = calculateDistance(
-        currentCoordinates.latitude,
-        currentCoordinates.longitude,
-        a.coordinates.latitude,
-        a.coordinates.longitude
+        currentCoordinates,
+        a.coordinates
       )
       const distB = calculateDistance(
-        currentCoordinates.latitude,
-        currentCoordinates.longitude,
-        b.coordinates.latitude,
-        b.coordinates.longitude
+        currentCoordinates,
+        b.coordinates
       )
       return distA - distB
     })
@@ -273,12 +270,6 @@ export default function PublicGigBrowser({
     }
   }
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-ZA', {
-      style: 'currency',
-      currency: 'ZAR'
-    }).format(amount)
-  }
 
   const formatDate = (date: Date | unknown) => {
     try {
@@ -489,7 +480,7 @@ export default function PublicGigBrowser({
             </p>
             {locationPermissionGranted && (
               <Button
-                variant={showNearbyOnly ? "default" : "outline"}
+                variant={showNearbyOnly ? "primary" : "outline"}
                 size="sm"
                 onClick={handleNearMeToggle}
                 className={showNearbyOnly ? "bg-blue-600 text-white" : "text-blue-700 border-blue-300 hover:bg-blue-100"}
@@ -545,10 +536,8 @@ export default function PublicGigBrowser({
                       {showNearbyOnly && currentCoordinates && gig.coordinates && (
                         <span className="text-blue-600 font-medium">
                           • {formatDistance(calculateDistance(
-                            currentCoordinates.latitude,
-                            currentCoordinates.longitude,
-                            gig.coordinates.latitude,
-                            gig.coordinates.longitude
+                            currentCoordinates,
+                            gig.coordinates
                           ))} away
                         </span>
                       )}
@@ -561,12 +550,11 @@ export default function PublicGigBrowser({
                   </p>
 
                   <div className="space-y-2 mb-4">
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm text-gray-500">Budget:</span>
-                      <span className="font-semibold text-green-600">
-                        {formatCurrency(gig.budget)}
-                      </span>
-                    </div>
+                    <GigAmountDisplay
+                      budget={gig.budget}
+                      showBreakdown={currentUser ? true : false}
+                      variant="compact"
+                    />
                     <div className="flex justify-between items-center">
                       <span className="text-sm text-gray-500">Duration:</span>
                       <span className="text-sm">{gig.duration}</span>

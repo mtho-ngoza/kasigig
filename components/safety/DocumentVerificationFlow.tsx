@@ -11,7 +11,7 @@ import { VerificationDocument } from '@/types/auth'
 import DocumentUpload from './DocumentUpload'
 
 interface DocumentVerificationFlowProps {
-  verificationLevel: 'basic' // Only basic verification is currently supported
+  verificationLevel: 'basic' | 'enhanced' | 'premium' // Verification levels
   onBack: () => void
   onComplete: () => void
 }
@@ -64,7 +64,7 @@ export default function DocumentVerificationFlow({
     ]
   }
 
-  const handleDocumentUpload = async (documentType: string, documentData: VerificationDocument) => {
+  const handleDocumentUpload = async (documentType: string, documentData: Partial<VerificationDocument>) => {
     try {
       // Document is already uploaded to Firebase Storage via DocumentStorageService
       // Update local state to reflect the new document
@@ -72,10 +72,10 @@ export default function DocumentVerificationFlow({
         const existing = prev.findIndex(doc => doc.type === documentType)
         if (existing >= 0) {
           const updated = [...prev]
-          updated[existing] = documentData
+          updated[existing] = { ...updated[existing], ...documentData } as VerificationDocument
           return updated
         }
-        return [...prev, documentData]
+        return [...prev, documentData as VerificationDocument]
       })
 
       const docTitle = getRequiredDocuments().find(doc => doc.type === documentType)?.title || 'Document'
@@ -125,7 +125,7 @@ export default function DocumentVerificationFlow({
       // Process verification for all draft documents
       const draftDocuments = documents.filter(doc => doc.status === 'draft')
       let allVerified = true
-      let verificationResults: Array<{docId: string, status: string, message: string}> = []
+      const verificationResults: Array<{docId: string, status: string, message: string}> = []
 
       for (const doc of draftDocuments) {
         try {
@@ -344,13 +344,13 @@ export default function DocumentVerificationFlow({
               <div className="w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 font-medium text-xs">
                 3
               </div>
-              <p>You'll receive instant verification results or feedback if documents need improvement</p>
+              <p>You&apos;ll receive instant verification results or feedback if documents need improvement</p>
             </div>
             <div className="flex items-start space-x-3">
               <div className="w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 font-medium text-xs">
                 4
               </div>
-              <p>Once verified, your trust score will be updated and you'll gain access to more opportunities</p>
+              <p>Once verified, your trust score will be updated and you&apos;ll gain access to more opportunities</p>
             </div>
           </div>
         </CardContent>

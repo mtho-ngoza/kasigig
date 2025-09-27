@@ -392,13 +392,4 @@ export class SecurityService {
   }
 
   // Utility methods
-  private static async getUser(userId: string): Promise<User | null> {
-    try {
-      const userDoc = await getDoc(doc(db, 'users', userId))
-      return userDoc.exists() ? userDoc.data() as User : null
-    } catch (error) {
-      console.error('Error getting user:', error)
-      return null
-    }
-  }
 }

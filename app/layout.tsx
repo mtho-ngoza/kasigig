@@ -5,6 +5,7 @@ import { AuthProvider } from '@/contexts/AuthContext'
 import { MessagingProvider } from '@/contexts/MessagingContext'
 import { ToastProvider } from '@/contexts/ToastContext'
 import { LocationProvider } from '@/contexts/LocationContext'
+import { PaymentProvider } from '@/contexts/PaymentContext'
 import { ErrorBoundary } from '@/components/ErrorBoundary'
 import { AppLayout } from '@/components/layout/AppLayout'
 
@@ -52,11 +53,13 @@ export default function RootLayout({
           <ToastProvider>
             <LocationProvider>
               <AuthProvider>
-                <MessagingProvider>
-                  <AppLayout>
-                    {children}
-                  </AppLayout>
-                </MessagingProvider>
+                <PaymentProvider>
+                  <MessagingProvider>
+                    <AppLayout>
+                      {children}
+                    </AppLayout>
+                  </MessagingProvider>
+                </PaymentProvider>
               </AuthProvider>
             </LocationProvider>
           </ToastProvider>

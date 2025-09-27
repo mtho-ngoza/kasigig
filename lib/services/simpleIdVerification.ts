@@ -1,6 +1,7 @@
 import { VerificationDocument } from '@/types/auth'
 import { DocumentStorageService } from './documentStorageService'
 import { SecurityService } from './securityService'
+import { getAuth } from 'firebase/auth'
 import { OCRService } from './ocrService'
 
 export interface SimpleVerificationResult {
@@ -136,7 +137,22 @@ export class SimpleIdVerification {
         }
       }
 
-      const user = await SecurityService.getUser(document.userId || '')
+      const auth = getAuth()
+      const currentUser = auth.currentUser
+      if (!currentUser) {
+        return {
+          isValid: false,
+          confidence: 0,
+          issues: ['User not authenticated'],
+          matches: {
+            idNumber: false,
+            name: false,
+            hasRequiredData: false
+          },
+          recommendations: ['Please log in again']
+        }
+      }
+      const user = await SecurityService.getUser(currentUser.uid)
       if (!user) {
         return {
           isValid: false,
@@ -359,7 +375,7 @@ export class SimpleIdVerification {
       }
 
       // Overall validation - WITH OCR verification
-      const hasValidIdNumber = result.matches.idNumber && user?.idNumber
+      const hasValidIdNumber = result.matches.idNumber && Boolean(user?.idNumber)
       const hasValidNameMatch = result.matches.name
       const hasBasicInfo = result.matches.hasRequiredData
       const noFormatIssues = !result.issues.some(issue =>
@@ -414,6 +430,16 @@ export class SimpleIdVerification {
     details?: SimpleVerificationResult
   }> {
     try {
+      const auth = getAuth()
+      const currentUser = auth.currentUser
+      if (!currentUser) {
+        return {
+          success: false,
+          status: 'rejected',
+          message: 'User not authenticated'
+        }
+      }
+
       const verificationResult = await this.verifyDocumentAgainstProfile(documentId)
 
       let status: 'verified' | 'rejected' | 'pending' = 'pending'
@@ -425,13 +451,13 @@ export class SimpleIdVerification {
 
         // Update user verification status
         const document = await DocumentStorageService.getDocument(documentId)
-        if (document?.userId) {
+        if (document) {
           await SecurityService.updateUserVerificationLevel(
-            document.userId,
+            currentUser.uid,
             document.verificationLevel
           )
           await SecurityService.updateTrustScore(
-            document.userId,
+            currentUser.uid,
             'document_verified',
             15,
             `${document.type} document verified`
@@ -451,13 +477,13 @@ export class SimpleIdVerification {
 
         // Also trigger verification success for lenient approvals
         const document = await DocumentStorageService.getDocument(documentId)
-        if (document?.userId) {
+        if (document) {
           await SecurityService.updateUserVerificationLevel(
-            document.userId,
+            currentUser.uid,
             document.verificationLevel
           )
           await SecurityService.updateTrustScore(
-            document.userId,
+            currentUser.uid,
             'document_verified',
             10, // Slightly lower score for lenient verification
             `${document.type} document verified (auto-approved)`

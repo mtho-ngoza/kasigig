@@ -11,6 +11,7 @@ import MyApplications from './application/MyApplications'
 import ManageApplications from './application/ManageApplications'
 import ProfileManagement from './profile/ProfileManagement'
 import { MessagingHub } from './messaging/MessagingHub'
+import PaymentDashboard from './payment/PaymentDashboard'
 
 interface DashboardProps {
   onBrowseGigs?: () => void
@@ -25,7 +26,7 @@ export default function Dashboard({
 }: DashboardProps) {
   const { user } = useAuth()
   const { totalUnreadCount } = useMessaging()
-  const [currentView, setCurrentView] = useState<'dashboard' | 'post-gig' | 'my-applications' | 'manage-applications' | 'profile' | 'messages'>('dashboard')
+  const [currentView, setCurrentView] = useState<'dashboard' | 'post-gig' | 'my-applications' | 'manage-applications' | 'profile' | 'messages' | 'payments'>('dashboard')
 
   // Auto-navigate to messages if conversationId is provided
   useEffect(() => {
@@ -63,6 +64,12 @@ export default function Dashboard({
       case 'messages':
         breadcrumbs.push({
           label: 'Messages',
+          isCurrentPage: true
+        })
+        break
+      case 'payments':
+        breadcrumbs.push({
+          label: 'Payments',
           isCurrentPage: true
         })
         break
@@ -167,6 +174,13 @@ export default function Dashboard({
           </div>
         </main>
       </div>
+    )
+  }
+
+  // Show payments page if user is on that view
+  if (currentView === 'payments') {
+    return (
+      <PaymentDashboard onBack={() => setCurrentView('dashboard')} />
     )
   }
 
@@ -292,7 +306,13 @@ export default function Dashboard({
                           </span>
                         )}
                       </Button>
-                      <Button variant="outline" className="w-full">Skill Assessment</Button>
+                      <Button
+                        variant="outline"
+                        className="w-full"
+                        onClick={() => setCurrentView('payments')}
+                      >
+                        Payments
+                      </Button>
                     </>
                   ) : (
                     <>
@@ -328,6 +348,13 @@ export default function Dashboard({
                         onClick={onBrowseGigs}
                       >
                         Browse Talent
+                      </Button>
+                      <Button
+                        variant="outline"
+                        className="w-full"
+                        onClick={() => setCurrentView('payments')}
+                      >
+                        Payments
                       </Button>
                     </>
                   )}

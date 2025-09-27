@@ -150,7 +150,7 @@ export class DocumentStorageService {
     reviewedBy?: string
   ): Promise<void> {
     try {
-      const updateData: any = {
+      const updateData: Record<string, unknown> = {
         status,
         updatedAt: serverTimestamp()
       }

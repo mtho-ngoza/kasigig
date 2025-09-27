@@ -1,4 +1,5 @@
 import { db } from '@/lib/firebase'
+import { getAuth } from 'firebase/auth'
 import {
   doc,
   setDoc,
@@ -233,12 +234,17 @@ export class BasicIdVerificationService {
         throw new Error('Document not found')
       }
 
-      // Get user data for cross-referencing
-      const user = await SecurityService.getUser(document.userId || '')
+      // Get current user data for cross-referencing
+      const auth = getAuth()
+      const currentUser = auth.currentUser
+      if (!currentUser) {
+        throw new Error('User not authenticated')
+      }
+      const user = await SecurityService.getUser(currentUser.uid)
 
       const result: Omit<BasicVerificationResult, 'id' | 'createdAt' | 'updatedAt'> = {
         documentId,
-        userId: document.userId || '',
+        userId: currentUser.uid,
         documentType: document.type,
         status: 'processing',
         verificationScore: 0,
@@ -282,7 +288,7 @@ export class BasicIdVerificationService {
       }
 
       // 2. ID Number Validation (if provided or extractable)
-      let idNumberToValidate = user?.idNumber
+      const idNumberToValidate = user?.idNumber
 
       if (document.type === 'sa_id' && idNumberToValidate) {
         const idValidation = this.validateSAIdNumber(idNumberToValidate)

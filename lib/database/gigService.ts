@@ -322,6 +322,20 @@ export class GigService {
     }
   }
 
+  // Update application payment status
+  static async updateApplicationPaymentStatus(
+    applicationId: string,
+    paymentStatus: GigApplication['paymentStatus'],
+    paymentId?: string
+  ): Promise<void> {
+    const updateData: Partial<GigApplication> = { paymentStatus };
+    if (paymentId) {
+      updateData.paymentId = paymentId;
+    }
+
+    await FirestoreService.update('applications', applicationId, updateData);
+  }
+
   // Review operations
   static async createReview(reviewData: Omit<Review, 'id' | 'createdAt'>): Promise<string> {
     const review = {

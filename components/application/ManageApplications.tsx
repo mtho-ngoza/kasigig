@@ -8,6 +8,7 @@ import { useAuth } from '@/contexts/AuthContext'
 import { GigApplication, Gig } from '@/types/gig'
 import { QuickMessageButton } from '@/components/messaging/QuickMessageButton'
 import { useToast } from '@/contexts/ToastContext'
+import PaymentDialog from '@/components/payment/PaymentDialog'
 
 interface ManageApplicationsProps {
   onBack?: () => void
@@ -27,6 +28,10 @@ export default function ManageApplications({ onBack, onMessageConversationStart 
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [processingApplications, setProcessingApplications] = useState<Set<string>>(new Set())
+  const [showPaymentDialog, setShowPaymentDialog] = useState<{
+    isOpen: boolean
+    application?: ApplicationWithGig
+  }>({ isOpen: false })
 
   useEffect(() => {
     const loadApplicationsAndGigs = async () => {
@@ -334,28 +339,56 @@ export default function ManageApplications({ onBack, onMessageConversationStart 
                     </div>
                   )}
 
-                  {application.status === 'accepted' && (
+                  {(application.status === 'accepted' || application.status === 'funded') && (
                     <div className="bg-green-50 border border-green-200 rounded-lg p-4">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center">
                           <svg className="w-5 h-5 text-green-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                           </svg>
-                          <span className="text-green-800 font-medium">
-                            Application accepted - Contact {application.applicantName} to begin the project.
-                          </span>
+                          <div className="flex flex-col">
+                            <span className="text-green-800 font-medium">
+                              {application.status === 'funded'
+                                ? `✅ Project Funded - ${application.applicantName} can begin work`
+                                : `Application accepted - Contact ${application.applicantName} to begin the project`}
+                            </span>
+                            {application.paymentStatus && application.paymentStatus !== 'unpaid' && (
+                              <span className="text-sm text-green-700 mt-1">
+                                Payment Status: {application.paymentStatus === 'in_escrow' ? '🔒 In Escrow' :
+                                                application.paymentStatus === 'paid' ? '✅ Paid' :
+                                                application.paymentStatus === 'released' ? '✅ Released' :
+                                                application.paymentStatus === 'disputed' ? '⚠️ Disputed' :
+                                                application.paymentStatus}
+                              </span>
+                            )}
+                          </div>
                         </div>
-                        <QuickMessageButton
-                          recipientId={application.applicantId}
-                          recipientName={application.applicantName}
-                          recipientType="job-seeker"
-                          gigId={application.gigId}
-                          gigTitle={application.gigTitle}
-                          size="sm"
-                          onConversationStart={onMessageConversationStart}
-                        >
-                          Contact Worker
-                        </QuickMessageButton>
+                        <div className="flex space-x-2">
+                          {(!application.paymentStatus || application.paymentStatus === 'unpaid') ? (
+                            <Button
+                              size="sm"
+                              onClick={() => setShowPaymentDialog({ isOpen: true, application })}
+                              className="bg-blue-600 hover:bg-blue-700"
+                            >
+                              💳 Make Payment
+                            </Button>
+                          ) : (
+                            <span className="px-3 py-2 bg-blue-100 text-blue-800 text-sm rounded-lg font-medium">
+                              Payment Completed
+                            </span>
+                          )}
+                          <QuickMessageButton
+                            recipientId={application.applicantId}
+                            recipientName={application.applicantName}
+                            recipientType="job-seeker"
+                            gigId={application.gigId}
+                            gigTitle={application.gigTitle}
+                            size="sm"
+                            onConversationStart={onMessageConversationStart}
+                          >
+                            Contact Worker
+                          </QuickMessageButton>
+                        </div>
                       </div>
                     </div>
                   )}
@@ -376,6 +409,52 @@ export default function ManageApplications({ onBack, onMessageConversationStart 
               </Card>
             ))}
           </div>
+        )}
+
+        {/* Payment Dialog */}
+        {showPaymentDialog.isOpen && showPaymentDialog.application && (
+          <PaymentDialog
+            isOpen={showPaymentDialog.isOpen}
+            gigId={showPaymentDialog.application.gigId}
+            workerId={showPaymentDialog.application.applicantId}
+            workerName={showPaymentDialog.application.applicantName}
+            amount={showPaymentDialog.application.proposedRate}
+            description={`Payment for "${showPaymentDialog.application.gigTitle}"`}
+            onSuccess={async (payment) => {
+              setShowPaymentDialog({ isOpen: false })
+              success('Payment processed successfully!')
+
+              // Update the application payment status and change status to funded
+              if (showPaymentDialog.application) {
+                try {
+                  // Update payment status
+                  await GigService.updateApplicationPaymentStatus(
+                    showPaymentDialog.application.id,
+                    'in_escrow',
+                    payment.id
+                  )
+
+                  // Update application status to funded
+                  await GigService.updateApplicationStatus(
+                    showPaymentDialog.application.id,
+                    'funded'
+                  )
+
+                  // Update local state to reflect both changes
+                  setApplications(prev =>
+                    prev.map(app =>
+                      app.id === showPaymentDialog.application?.id
+                        ? { ...app, status: 'funded' as const, paymentStatus: 'in_escrow' as const, paymentId: payment.id }
+                        : app
+                    )
+                  )
+                } catch (error) {
+                  console.error('Error updating application payment status:', error)
+                }
+              }
+            }}
+            onCancel={() => setShowPaymentDialog({ isOpen: false })}
+          />
         )}
       </div>
     </div>
