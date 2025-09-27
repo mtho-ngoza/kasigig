@@ -263,8 +263,7 @@ export default function SafeMeetingLocations({
   }
 
   const formatOperatingHours = (location: SafeMeetingLocation) => {
-    const today = new Date().toLocaleLowerCase().slice(0, 3) +
-      new Date().toLocaleDateString('en', { weekday: 'long' }).toLowerCase().slice(3)
+    const today = new Date().toLocaleDateString('en', { weekday: 'long' }).toLowerCase()
     const todayHours = location.operatingHours[today as keyof typeof location.operatingHours]
 
     if (!todayHours) return 'Closed today'

@@ -166,7 +166,7 @@ export function LocationProvider({ children }: LocationProviderProps) {
   }
 
   const isLocationFilterActive = (): boolean => {
-    return locationFilter !== null || (userLocation?.allowLocationAccess && currentCoordinates !== null)
+    return locationFilter !== null || (Boolean(userLocation?.allowLocationAccess) && currentCoordinates !== null)
   }
 
   const contextValue: LocationContextType = {
