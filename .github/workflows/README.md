@@ -6,7 +6,7 @@ This directory contains GitHub Actions workflows for continuous integration and 
 
 ### CI Workflow (`ci.yml`)
 
-Runs on every pull request and push to master/main branches.
+Runs on every pull request and push.
 
 #### Jobs
 
@@ -26,9 +26,25 @@ Runs on every pull request and push to master/main branches.
 - Validates all type definitions
 - Catches type errors before merge
 
-#### Required Secrets
+#### Firebase Emulators
 
-- `CODECOV_TOKEN` (optional): Token for uploading coverage reports to Codecov
+Both the test and build jobs use Firebase emulators running in Docker containers. This provides:
+
+- **Isolated testing environment**: No need for real Firebase credentials
+- **Consistent behavior**: Same environment across all CI runs
+- **Cost-effective**: No Firebase usage costs during CI
+- **Faster execution**: Local emulators are faster than cloud services
+
+**Emulator Services:**
+- Auth Emulator (port 9099)
+- Firestore Emulator (port 8080)
+- Storage Emulator (port 9199)
+
+The Docker image `andreysenov/firebase-tools:latest` provides all Firebase emulators pre-configured.
+
+#### Optional Secrets
+
+- `CODECOV_TOKEN`: Token for uploading coverage reports to Codecov
 
 #### Status Checks
 
