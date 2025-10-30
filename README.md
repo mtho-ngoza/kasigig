@@ -208,6 +208,87 @@ npm run dev
 
 6. **Open [http://localhost:3000](http://localhost:3000)**
 
+## 🧪 Local Development with Firebase Emulators
+
+For local development, you can use Firebase Emulators to test without connecting to production Firebase services.
+
+### Setting Up Emulators
+
+1. **Install Firebase CLI** (if not already installed)
+```bash
+npm install -g firebase-tools
+```
+
+2. **Configure environment for emulators**
+
+   Update your `.env.local` file to enable emulator mode:
+```env
+# Enable Firebase Emulators
+NEXT_PUBLIC_USE_EMULATOR=true
+
+# Use fake credentials for emulators
+NEXT_PUBLIC_FIREBASE_API_KEY=fake-api-key-for-emulator
+NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=localhost
+NEXT_PUBLIC_FIREBASE_PROJECT_ID=demo-gig-sa
+NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=demo-gig-sa.appspot.com
+NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=123456789
+NEXT_PUBLIC_FIREBASE_APP_ID=1:123456789:web:abc123
+```
+
+3. **Start development with emulators**
+```bash
+npm run dev
+```
+
+This command will concurrently start:
+- Firebase Emulators (Auth, Firestore, Storage)
+- Next.js development server
+
+### Accessing Emulator Services
+
+Once running, you can access:
+- **Emulator UI**: http://localhost:4000
+- **Next.js App**: http://localhost:3000
+- **Auth Emulator**: http://localhost:9099
+- **Firestore Emulator**: http://localhost:8080
+- **Storage Emulator**: http://localhost:9199
+
+### Development vs Production Firestore Rules
+
+The project includes two Firestore rules files:
+
+- **`firestore.rules`**: Production rules with proper security (used by default)
+- **`firestore.dev.rules`**: Development rules with open access (for local testing only)
+
+**Important**: The Firebase emulator loads rules from the file specified in `firebase.json` (default: `firestore.rules`). If you need to test with open rules locally:
+
+```bash
+# Temporarily switch to dev rules (local testing only!)
+cp firestore.rules firestore.rules.backup
+cp firestore.dev.rules firestore.rules
+
+# After testing, restore production rules
+cp firestore.rules.backup firestore.rules
+rm firestore.rules.backup
+```
+
+**Never commit open development rules to production!**
+
+### Switching Between Local and Production
+
+To switch back to production Firebase:
+
+1. Update `.env.local`:
+```env
+NEXT_PUBLIC_USE_EMULATOR=false
+# Add your real Firebase credentials
+NEXT_PUBLIC_FIREBASE_API_KEY=your_real_api_key
+NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=your_project.firebaseapp.com
+# ... etc
+```
+
+2. Restart the development server
+
 ## 📁 Project Structure
 
 ```
