@@ -23,6 +23,7 @@ const customJestConfig = {
     'lib/database/messagingService.ts',
     'lib/database/profileService.ts',
     'lib/database/fileService.ts',
+    'lib/database/reviewService.ts',
     'lib/utils/locationUtils.ts',
     '!**/*.d.ts',
     '!**/node_modules/**',
