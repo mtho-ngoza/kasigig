@@ -1,0 +1,26 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // DEVELOPMENT ONLY: Open rules for local emulator testing
+    // DO NOT USE IN PRODUCTION!
+    //
+    // These rules allow all read/write operations for easier local development.
+    // The production rules in firestore.rules should always be used for deployment.
+    //
+    // To use these rules with the Firebase Emulator:
+    // 1. Set NEXT_PUBLIC_USE_EMULATOR=true in .env.local
+    // 2. Run: npm run dev (starts emulators + Next.js)
+    // 3. The emulator will load the production rules by default from firestore.rules
+    //
+    // Note: Firebase emulators always load rules from the file specified in firebase.json
+    // If you need to test with these open rules, temporarily rename:
+    //   - firestore.rules -> firestore.rules.backup
+    //   - firestore.dev.rules -> firestore.rules
+    // Then restore before committing!
+
+    match /{document=**} {
+      allow read, write: if true;
+    }
+  }
+}
