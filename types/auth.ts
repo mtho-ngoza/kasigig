@@ -47,6 +47,7 @@ export interface User {
   workSector?: 'professional' | 'informal'
   idNumber?: string
   rating?: number
+  reviewCount?: number
   completedGigs?: number
   skills?: string[]
   badges?: string[]
