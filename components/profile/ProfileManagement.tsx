@@ -13,6 +13,7 @@ import ProfileCompleteness from './ProfileCompleteness'
 import { isInformalWorker, getProfileSectionIcon } from '@/lib/utils/userProfile'
 import SafetyPreferencesManager from '@/components/safety/SafetyPreferencesManager'
 import { TrustScoreBadge, VerificationBadge } from '@/components/safety/TrustScoreBadge'
+import { RatingDisplay, ReviewList } from '@/components/review'
 
 interface ProfileManagementProps {
   onBack?: () => void
@@ -236,13 +237,14 @@ export default function ProfileManagement({ onBack }: ProfileManagementProps) {
                   )}
 
                   {/* Rating & Stats */}
-                  <div className="flex items-center space-x-4 text-sm text-gray-600">
-                    {user.rating && (
-                      <div className="flex items-center">
-                        <span className="text-yellow-500 mr-1">⭐</span>
-                        {user.rating.toFixed(1)}
-                      </div>
-                    )}
+                  <div className="flex items-center flex-wrap gap-4 text-sm text-gray-600 mb-3">
+                    <RatingDisplay
+                      rating={user.rating}
+                      reviewCount={user.reviewCount}
+                      size="sm"
+                      showLabel
+                      showCount
+                    />
                     {user.completedGigs && (
                       <div>
                         {user.completedGigs} completed {user.userType === 'job-seeker' ? 'gigs' : 'projects'}
@@ -259,7 +261,7 @@ export default function ProfileManagement({ onBack }: ProfileManagementProps) {
 
               {/* Portfolio Preview */}
               {user.userType === 'job-seeker' && user.portfolio && user.portfolio.length > 0 && (
-                <div>
+                <div className="mb-6">
                   <h4 className="font-semibold text-gray-900 mb-3">Recent Work</h4>
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     {user.portfolio.slice(0, 3).map((item) => (
@@ -280,6 +282,15 @@ export default function ProfileManagement({ onBack }: ProfileManagementProps) {
               )}
             </CardContent>
           </Card>
+        </div>
+
+        {/* Reviews Section */}
+        <div className="mt-8">
+          <ReviewList
+            userId={user.id}
+            title={isInformal ? "What People Say About Me" : "Reviews"}
+            maxInitialReviews={5}
+          />
         </div>
       </div>
     </div>
