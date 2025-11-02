@@ -173,7 +173,8 @@ export default function PostGigForm({ onSuccess, onCancel }: PostGigFormProps) {
       newErrors.duration = 'Duration is required'
     }
 
-    if (!isInformalWork && !formData.skillsRequired.trim()) {
+    // Only validate skills if required (non-informal work categories)
+    if (skillsConfig.required && !formData.skillsRequired.trim()) {
       newErrors.skillsRequired = 'At least one skill is required'
     }
 
