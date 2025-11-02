@@ -31,6 +31,7 @@ export class MessagingService {
           ...p,
           joinedAt: new Date()
         })),
+        participantIds: participants.map(p => p.userId), // Add participantIds for easier querying
         gigId: gigId || null,
         gigTitle: gigTitle || null,
         lastMessageAt: new Date(),
@@ -309,6 +310,7 @@ export class MessagingService {
   ): Unsubscribe {
     const q = query(
       collection(db, 'conversations'),
+      where('participantIds', 'array-contains', userId),
       orderBy('lastMessageAt', 'desc')
     );
 
@@ -317,7 +319,8 @@ export class MessagingService {
         const conversations: Conversation[] = [];
         snapshot.forEach((doc) => {
           const data = doc.data() as Omit<Conversation, 'id'>;
-          if (data.participants.some(p => p.userId === userId) && data.status !== 'archived') {
+          // Filter out archived conversations
+          if (data.status !== 'archived') {
             conversations.push({ id: doc.id, ...data });
           }
         });

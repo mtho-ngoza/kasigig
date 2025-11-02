@@ -176,28 +176,28 @@ service cloud.firestore {
     // ========================================
     match /conversations/{conversationId} {
       // Only participants can read the conversation
+      // Using participantIds array for easier querying
       allow read: if isAuthenticated() &&
-                    request.auth.uid in resource.data.participants[0].userId ||
-                    request.auth.uid in resource.data.participants[1].userId;
+                    request.auth.uid in resource.data.participantIds;
 
       // Authenticated users can create conversations
       allow create: if isAuthenticated() &&
-                      hasRequiredFields(['participants', 'status']) &&
+                      hasRequiredFields(['participants', 'participantIds', 'status']) &&
                       // User must be one of the participants
-                      (request.auth.uid == request.resource.data.participants[0].userId ||
-                       request.auth.uid == request.resource.data.participants[1].userId);
+                      request.auth.uid in request.resource.data.participantIds &&
+                      // Ensure participantIds matches participants array
+                      request.resource.data.participantIds.size() == request.resource.data.participants.size();
 
       // Participants can update conversation metadata (archive, etc.)
       allow update: if isAuthenticated() &&
-                      (request.auth.uid in resource.data.participants[0].userId ||
-                       request.auth.uid in resource.data.participants[1].userId) &&
-                      // Cannot change participants
-                      request.resource.data.participants == resource.data.participants;
+                      request.auth.uid in resource.data.participantIds &&
+                      // Cannot change participants or participantIds
+                      request.resource.data.participants == resource.data.participants &&
+                      request.resource.data.participantIds == resource.data.participantIds;
 
       // Participants can delete (archive) conversations
       allow delete: if isAuthenticated() &&
-                      (request.auth.uid in resource.data.participants[0].userId ||
-                       request.auth.uid in resource.data.participants[1].userId);
+                      request.auth.uid in resource.data.participantIds;
     }
 
     // ========================================
@@ -497,6 +497,73 @@ service cloud.firestore {
       // Only system/admin can create or update ratings (aggregated data)
       allow create: if isAdmin();
       allow update: if isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    // ========================================
+    // Payment History Collection
+    // ========================================
+    match /paymentHistory/{historyId} {
+      // Users can read their own payment history
+      allow read: if isAuthenticated() &&
+                    resource.data.userId == request.auth.uid;
+
+      // System can create payment history entries (via Cloud Functions or backend)
+      // For client-side, only allow if authenticated and creating for self
+      allow create: if isAuthenticated() &&
+                      hasRequiredFields(['userId', 'type', 'amount', 'status']) &&
+                      request.resource.data.userId == request.auth.uid;
+
+      // Payment history is generally immutable, but allow updates for status changes
+      allow update: if isAuthenticated() &&
+                      resource.data.userId == request.auth.uid;
+
+      // Users can delete their own history, admins can delete any
+      allow delete: if isAuthenticated() &&
+                      (request.auth.uid == resource.data.userId || isAdmin());
+    }
+
+    // ========================================
+    // Payment Intents Collection
+    // ========================================
+    match /paymentIntents/{intentId} {
+      // Users can read their own payment intents
+      allow read: if isAuthenticated() &&
+                    (request.auth.uid == resource.data.employerId ||
+                     request.auth.uid == resource.data.workerId);
+
+      // Users can create payment intents
+      allow create: if isAuthenticated() &&
+                      hasRequiredFields(['gigId', 'employerId', 'workerId', 'amount']) &&
+                      request.resource.data.employerId == request.auth.uid;
+
+      // System/admin can update payment intent status
+      allow update: if isAuthenticated() &&
+                      (request.auth.uid == resource.data.employerId || isAdmin());
+
+      // Only admins can delete payment intents
+      allow delete: if isAdmin();
+    }
+
+    // ========================================
+    // Escrow Accounts Collection
+    // ========================================
+    match /escrowAccounts/{escrowId} {
+      // Employer, worker, and admin can read escrow accounts
+      allow read: if isAuthenticated() &&
+                    (request.auth.uid == resource.data.employerId ||
+                     request.auth.uid == resource.data.workerId ||
+                     isAdmin());
+
+      // System/admin can create escrow accounts
+      allow create: if isAuthenticated() &&
+                      hasRequiredFields(['paymentId', 'gigId', 'employerId', 'workerId', 'totalAmount']);
+
+      // Employer can release escrow, admin can manage
+      allow update: if isAuthenticated() &&
+                      (request.auth.uid == resource.data.employerId || isAdmin());
+
+      // Only admins can delete escrow accounts
       allow delete: if isAdmin();
     }
 
