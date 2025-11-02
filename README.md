@@ -529,7 +529,16 @@ npm run lint     # Run ESLint
 - [ ] Class 42 (Software/Platform services)
 - [ ] Processing time: 6-12 months (file NOW before public launch)
 
-#### 3. Deploy Production Security Rules (Day 3-5) 🔐
+#### 3. Configure Vercel CI/CD (Day 2-3) 🔧
+**Priority**: HIGH - Prevent broken deployments
+
+- [ ] **Configure Vercel to block deploys on failures**
+  - Settings → Git → Ignored Build Step
+  - Enable "Cancel deployment if build command exits with error"
+  - Add build command: `npm run test:ci && npx tsc --noEmit`
+  - This ensures no broken code reaches production
+
+#### 4. Deploy Production Security Rules (Day 3-5) 🔐
 **Priority**: CRITICAL - CANNOT GO LIVE WITHOUT THIS
 
 ```bash
