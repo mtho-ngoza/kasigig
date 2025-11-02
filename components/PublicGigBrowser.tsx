@@ -93,15 +93,17 @@ export default function PublicGigBrowser({
       setLoading(true)
       const openGigs = await GigService.getGigsByStatus('open')
 
-      // Load application counts for all gigs
-      const counts: Record<string, number> = {}
-      await Promise.all(
-        openGigs.map(async (gig) => {
-          const count = await GigService.getApplicationCountByGig(gig.id)
-          counts[gig.id] = count
-        })
-      )
-      setApplicationCounts(counts)
+      // Load application counts for all gigs (only if user is authenticated)
+      if (currentUser) {
+        const counts: Record<string, number> = {}
+        await Promise.all(
+          openGigs.map(async (gig) => {
+            const count = await GigService.getApplicationCountByGig(gig.id)
+            counts[gig.id] = count
+          })
+        )
+        setApplicationCounts(counts)
+      }
 
       // If no gigs found from database, show demo data
       if (openGigs.length === 0) {
@@ -286,15 +288,17 @@ export default function PublicGigBrowser({
       const searchResults = await GigService.searchGigs(searchTerm, selectedCategory || undefined)
       const openGigs = searchResults.filter(gig => gig.status === 'open').slice(0, 20)
 
-      // Load application counts for search results
-      const counts: Record<string, number> = {}
-      await Promise.all(
-        openGigs.map(async (gig) => {
-          const count = await GigService.getApplicationCountByGig(gig.id)
-          counts[gig.id] = count
-        })
-      )
-      setApplicationCounts(counts)
+      // Load application counts for search results (only if user is authenticated)
+      if (currentUser) {
+        const counts: Record<string, number> = {}
+        await Promise.all(
+          openGigs.map(async (gig) => {
+            const count = await GigService.getApplicationCountByGig(gig.id)
+            counts[gig.id] = count
+          })
+        )
+        setApplicationCounts(counts)
+      }
 
       const filteredGigs = await filterGigsByLocation(openGigs)
       setGigs(filteredGigs)
@@ -641,9 +645,13 @@ export default function PublicGigBrowser({
                   )}
 
                   <div className="flex justify-between items-center">
-                    <span className="text-sm text-gray-500">
-                      {applicationCounts[gig.id] || 0} applicants
-                    </span>
+                    {currentUser ? (
+                      <span className="text-sm text-gray-500">
+                        {applicationCounts[gig.id] || 0} applicants
+                      </span>
+                    ) : (
+                      <span></span>
+                    )}
                     <div className="flex items-center space-x-2">
                       {currentUser && currentUser.id !== gig.employerId && (
                         <QuickMessageButton
