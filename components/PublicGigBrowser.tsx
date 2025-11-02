@@ -255,6 +255,22 @@ export default function PublicGigBrowser({
     }
   }, [showNearbyOnly, radiusKm, currentCoordinates])
 
+  // Auto-search when category changes (instant filter)
+  useEffect(() => {
+    handleSearch()
+  }, [selectedCategory])
+
+  // Debounced search for text input (auto-search after user stops typing)
+  useEffect(() => {
+    const debounceTimer = setTimeout(() => {
+      if (searchTerm !== '') {
+        handleSearch()
+      }
+    }, 500) // 500ms delay after user stops typing
+
+    return () => clearTimeout(debounceTimer)
+  }, [searchTerm])
+
   const handleSearch = async () => {
     try {
       setLoading(true)
@@ -267,6 +283,13 @@ export default function PublicGigBrowser({
       setGigs([])
     } finally {
       setLoading(false)
+    }
+  }
+
+  // Handle Enter key press for immediate search
+  const handleSearchKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      handleSearch()
     }
   }
 
@@ -345,9 +368,10 @@ export default function PublicGigBrowser({
               <div className="md:col-span-2">
                 <input
                   type="text"
-                  placeholder="Search gigs..."
+                  placeholder="Search gigs... (auto-searches as you type)"
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
+                  onKeyPress={handleSearchKeyPress}
                   className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-primary-500 focus:border-transparent text-gray-900"
                 />
               </div>
@@ -364,8 +388,8 @@ export default function PublicGigBrowser({
                 </select>
               </div>
               <div>
-                <Button onClick={handleSearch} className="w-full">
-                  Search
+                <Button onClick={handleSearch} className="w-full" variant="outline">
+                  🔍 Search Now
                 </Button>
               </div>
             </div>
