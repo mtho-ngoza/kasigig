@@ -11,6 +11,10 @@ import { AppLayout } from '@/components/layout/AppLayout'
 
 const inter = Inter({ subsets: ['latin'] })
 
+// Force dynamic rendering for the entire app
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
+
 export const metadata: Metadata = {
   title: 'KasiGig - Empowering South Africa\'s Informal Sector',
   description: 'Secure, inclusive gig opportunities for all South Africans. From kasi to career - find work, build skills, earn income.',
