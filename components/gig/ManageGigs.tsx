@@ -171,12 +171,16 @@ export default function ManageGigs({ onBack, onViewGig }: ManageGigsProps) {
   }
 
   const formatCurrency = (amount: number) => {
+    // Ensure regular spaces in output for test compatibility (Intl may use non-breaking spaces)
     return new Intl.NumberFormat('en-ZA', {
       style: 'currency',
       currency: 'ZAR',
       minimumFractionDigits: 0,
       maximumFractionDigits: 0
-    }).format(amount)
+    })
+      .format(amount)
+      // Replace non-breaking space and narrow no-break space with a normal space
+      .replace(/[\u00A0\u202F]/g, ' ')
   }
 
   const formatDate = (date: Date | unknown) => {
