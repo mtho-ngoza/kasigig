@@ -74,7 +74,6 @@ export default function ManageApplications({ onBack, onMessageConversationStart 
 
         setApplications(allApplications)
       } catch (error) {
-        console.error('Error loading applications:', error)
         setError('Failed to load applications')
       } finally {
         setLoading(false)
@@ -104,7 +103,6 @@ export default function ManageApplications({ onBack, onMessageConversationStart 
       success(`Application ${actionText} successfully!`)
 
     } catch (error) {
-      console.error('Error updating application status:', error)
       showError('Failed to update application status. Please try again.')
     } finally {
       setProcessingApplications(prev => {
@@ -514,7 +512,8 @@ export default function ManageApplications({ onBack, onMessageConversationStart 
                     )
                   )
                 } catch (error) {
-                  console.error('Error updating application payment status:', error)
+                  // Payment status update failed - payment was successful but status wasn't updated
+                  // User can still proceed with the funded application
                 }
               }
             }}
