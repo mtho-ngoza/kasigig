@@ -121,11 +121,9 @@ export default function JobSeekerProfileDialog({
                         level={user.verificationLevel || (user.isVerified ? 'basic' : 'none')}
                         size="sm"
                       />
-                      {user.trustScore !== undefined && (
-                        <div>
-                          <TrustScoreBadge score={user.trustScore} size="sm" />
-                        </div>
-                      )}
+                      <div>
+                        <TrustScoreBadge score={user.trustScore || 50} size="sm" />
+                      </div>
                       {user.rating !== undefined && (
                         <div className="flex items-center justify-end">
                           <RatingDisplay
