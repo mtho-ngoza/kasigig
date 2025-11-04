@@ -9,7 +9,10 @@ import {
   where,
   orderBy,
   Timestamp,
-  writeBatch
+  writeBatch,
+  runTransaction,
+  increment,
+  FirestoreError as FirebaseError
 } from 'firebase/firestore'
 import { db } from '@/lib/firebase'
 import {
@@ -180,18 +183,28 @@ export class PaymentService {
 
   static async processPayment(paymentIntentId: string): Promise<Payment> {
     try {
-      // In a real implementation, this would integrate with payment providers
-      // For now, we'll simulate the payment process
+      console.debug('Starting payment processing for intent:', paymentIntentId)
+      const intentRef = doc(db, COLLECTIONS.PAYMENT_INTENTS, paymentIntentId)
 
-      const intentDoc = await getDoc(doc(db, COLLECTIONS.PAYMENT_INTENTS, paymentIntentId))
+      // First validate that all required data exists
+      console.debug('Fetching payment intent data...')
+      const intentDoc = await getDoc(intentRef)
       if (!intentDoc.exists()) {
+        console.error('Payment intent not found:', paymentIntentId)
         throw new Error('Payment intent not found')
       }
 
       const intentData = intentDoc.data()
+      console.debug('Payment intent data:', {
+        ...intentData,
+        createdAt: intentData.createdAt?.toDate()
+      })
+
+      console.debug('Fetching payment method data...')
       const paymentMethodDoc = await getDoc(doc(db, COLLECTIONS.PAYMENT_METHODS, intentData.paymentMethodId))
 
       if (!paymentMethodDoc.exists()) {
+        console.error('Payment method not found:', intentData.paymentMethodId)
         throw new Error('Payment method not found')
       }
 
@@ -202,7 +215,28 @@ export class PaymentService {
         updatedAt: paymentMethodDoc.data().updatedAt?.toDate() || new Date()
       } as PaymentMethod
 
-      // Create payment record
+      console.debug('Payment method data:', {
+        id: paymentMethod.id,
+        type: paymentMethod.type,
+        isDefault: paymentMethod.isDefault
+      })
+
+      // Get gig details for better descriptions
+      let gigTitle = `Gig ${intentData.gigId}` // fallback
+      try {
+        console.debug('Fetching gig details...')
+        const gig = await GigService.getGigById(intentData.gigId)
+        if (gig?.title) {
+          gigTitle = gig.title
+          console.debug('Got gig title:', gigTitle)
+        } else {
+          console.debug('Gig found but no title, using fallback')
+        }
+      } catch (error) {
+        console.debug('Could not fetch gig details:', error)
+      }
+
+      // Prepare all the data we'll need in the transaction
       const paymentData = {
         gigId: intentData.gigId,
         employerId: intentData.employerId,
@@ -217,49 +251,124 @@ export class PaymentService {
         transactionId: `txn_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
         providerTransactionId: `prov_${Date.now()}`,
         providerReference: `ref_${Date.now()}`,
-        description: `Payment for gig ${intentData.gigId}`,
+        description: `Payment for "${gigTitle}"`,
         createdAt: Timestamp.now(),
         processedAt: Timestamp.now()
       }
 
-      const paymentDocRef = await addDoc(collection(db, COLLECTIONS.PAYMENTS), paymentData)
-
-      // Update payment intent status
-      await updateDoc(doc(db, COLLECTIONS.PAYMENT_INTENTS, paymentIntentId), {
-        status: 'succeeded',
-        paymentId: paymentDocRef.id
+      console.debug('Starting transaction with payment data:', {
+        gigId: paymentData.gigId,
+        amount: paymentData.amount,
+        type: paymentData.type,
+        employerId: paymentData.employerId,
+        workerId: paymentData.workerId
       })
 
-      // Create escrow account
-      await this.createEscrowAccount(paymentDocRef.id, intentData.gigId, intentData.employerId, intentData.workerId, intentData.amount)
+      // Execute all writes in a transaction
+      return await runTransaction(db, async (transaction) => {
+        try {
+          // STEP 1: Perform all reads first
+          console.debug('Transaction step 1: Performing all required reads...')
+          const userRef = doc(db, 'users', intentData.workerId)
+          const userDoc = await transaction.get(userRef)
+          if (!userDoc.exists()) {
+            console.error('Worker not found:', intentData.workerId)
+            throw new Error('Worker not found')
+          }
 
-      // Get gig details for better descriptions
-      let gigTitle = `Gig ${intentData.gigId}` // fallback
-      try {
-        const gig = await GigService.getGigById(intentData.gigId)
-        if (gig?.title) {
-          gigTitle = gig.title
+          // STEP 2: Create all document references
+          console.debug('Transaction step 2: Creating document references...')
+          const paymentRef = doc(collection(db, COLLECTIONS.PAYMENTS))
+          const escrowRef = doc(collection(db, COLLECTIONS.ESCROW_ACCOUNTS))
+          const employerHistoryRef = doc(collection(db, COLLECTIONS.PAYMENT_HISTORY))
+          const workerHistoryRef = doc(collection(db, COLLECTIONS.PAYMENT_HISTORY))
+
+          // STEP 3: Perform all writes
+          console.debug('Transaction step 3: Creating payment record...')
+          transaction.set(paymentRef, paymentData)
+
+          console.debug('Transaction step 4: Updating payment intent...')
+          transaction.update(intentRef, {
+            status: 'succeeded',
+            paymentId: paymentRef.id
+          })
+
+          console.debug('Transaction step 5: Creating escrow account...')
+          const escrowData = {
+            paymentId: paymentRef.id,
+            gigId: intentData.gigId,
+            employerId: intentData.employerId,
+            workerId: intentData.workerId,
+            totalAmount: intentData.amount,
+            releasedAmount: 0,
+            status: 'active' as const,
+            milestones: [],
+            createdAt: Timestamp.now()
+          }
+          transaction.set(escrowRef, escrowData)
+
+          console.debug('Transaction step 6: Adding payment history records...')
+          transaction.set(employerHistoryRef, {
+            userId: intentData.employerId,
+            type: 'payments',
+            amount: intentData.amount,
+            currency: 'ZAR',
+            status: 'completed',
+            gigId: intentData.gigId,
+            paymentId: paymentRef.id,
+            description: `Payment for "${gigTitle}"`,
+            createdAt: Timestamp.now()
+          })
+
+          transaction.set(workerHistoryRef, {
+            userId: intentData.workerId,
+            type: 'earnings',
+            amount: intentData.amount,
+            currency: 'ZAR',
+            status: 'pending',
+            gigId: intentData.gigId,
+            paymentId: paymentRef.id,
+            description: `Earnings from "${gigTitle}"`,
+            createdAt: Timestamp.now()
+          })
+
+          console.debug('Transaction step 7: Updating worker balance...')
+          transaction.update(userRef, {
+            pendingBalance: increment(intentData.amount),
+            updatedAt: Timestamp.now()
+          })
+
+          console.debug('All transaction steps completed successfully')
+          return {
+            id: paymentRef.id,
+            ...paymentData,
+            createdAt: new Date(),
+            processedAt: new Date()
+          }
+        } catch (error) {
+          console.error('Transaction failed:', error)
+          throw error // Re-throw to be caught by outer catch block
         }
-      } catch {
-        console.log('Could not fetch gig title for payment history, using ID')
-      }
-
-      // Add to payment history with human-readable descriptions
-      await this.addPaymentHistory(intentData.employerId, 'payments', intentData.amount, 'completed', intentData.gigId, paymentDocRef.id, `Payment for "${gigTitle}"`)
-      await this.addPaymentHistory(intentData.workerId, 'earnings', intentData.amount, 'pending', intentData.gigId, paymentDocRef.id, `Earnings from "${gigTitle}"`)
-
-      // Update worker's pending balance (funds in escrow)
-      await WalletService.updatePendingBalance(intentData.workerId, intentData.amount)
-
-      return {
-        id: paymentDocRef.id,
-        ...paymentData,
-        createdAt: new Date(),
-        processedAt: new Date()
-      }
+      })
     } catch (error) {
-      console.debug('Error processing payment:', error)
-      throw new Error('Failed to process payment')
+      // Enhanced error logging
+      console.error('Payment processing failed:', {
+        error,
+        errorCode: error instanceof FirebaseError ? error.code : undefined,
+        errorMessage: error instanceof FirebaseError ? error.message : error?.toString(),
+        stackTrace: error instanceof Error ? error.stack : undefined
+      })
+
+      if (error instanceof FirebaseError) {
+        console.error('Firebase error details:', {
+          code: error.code,
+          message: error.message,
+          stack: error.stack
+        })
+        throw new Error(`Failed to process payment: ${error.code} - ${error.message}`)
+      }
+
+      throw new Error(`Failed to process payment: ${error instanceof Error ? error.message : 'Unknown error occurred'}`)
     }
   }
 

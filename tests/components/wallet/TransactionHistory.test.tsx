@@ -40,77 +40,77 @@ describe('TransactionHistory Component', () => {
   const mockJobSeeker: User = {
     id: 'user-123',
     email: 'worker@example.com',
-    userType: 'job-seeker',
+    userType: 'job-seeker' as const,
     firstName: 'John',
     lastName: 'Worker',
     phone: '+27123456789',
     location: 'Cape Town',
-    createdAt: new Date('2024-01-01')
+    createdAt: new Date('2025-01-01') // Updated to a date in the past relative to current context
   }
 
   const mockEmployer: User = {
     id: 'employer-123',
     email: 'employer@example.com',
-    userType: 'employer',
+    userType: 'employer' as const,
     firstName: 'Jane',
     lastName: 'Employer',
     phone: '+27987654321',
     location: 'Johannesburg',
-    createdAt: new Date('2024-01-01')
+    createdAt: new Date('2025-01-01') // Updated to a date in the past relative to current context
   }
 
   const mockTransactions: PaymentHistory[] = [
     {
       id: 'txn-1',
       userId: 'user-123',
-      type: 'earnings',
+      type: 'earnings' as const,
       amount: 1000,
-      currency: 'ZAR',
-      status: 'completed',
+      currency: 'ZAR' as const,
+      status: 'completed' as const,
       gigId: 'gig-1',
       description: 'Payment for Plumbing Job',
-      createdAt: new Date('2024-01-15T10:00:00')
+      createdAt: new Date('2025-10-15T10:00:00') // Updated to recent past
     },
     {
       id: 'txn-2',
       userId: 'user-123',
-      type: 'payments',
+      type: 'payments' as const,
       amount: -500,
-      currency: 'ZAR',
-      status: 'completed',
+      currency: 'ZAR' as const,
+      status: 'completed' as const,
       description: 'Withdrawal to bank account',
-      createdAt: new Date('2024-01-10T14:00:00')
+      createdAt: new Date('2025-10-10T14:00:00') // Updated to recent past
     },
     {
       id: 'txn-3',
       userId: 'user-123',
-      type: 'fees',
+      type: 'fees' as const,
       amount: -50,
-      currency: 'ZAR',
-      status: 'completed',
+      currency: 'ZAR' as const,
+      status: 'completed' as const,
       description: 'Platform commission',
-      createdAt: new Date('2024-01-15T10:01:00')
+      createdAt: new Date('2025-10-15T10:01:00') // Updated to recent past
     },
     {
       id: 'txn-4',
       userId: 'user-123',
-      type: 'earnings',
+      type: 'earnings' as const,
       amount: 750,
-      currency: 'ZAR',
-      status: 'pending',
+      currency: 'ZAR' as const,
+      status: 'pending' as const,
       gigId: 'gig-2',
       description: 'Payment for Garden Maintenance',
-      createdAt: new Date('2024-01-20T09:00:00')
+      createdAt: new Date('2025-10-20T09:00:00') // Updated to recent past
     },
     {
       id: 'txn-5',
       userId: 'user-123',
-      type: 'refunds',
+      type: 'refunds' as const,
       amount: 200,
-      currency: 'ZAR',
-      status: 'completed',
+      currency: 'ZAR' as const,
+      status: 'completed' as const,
       description: 'Refund for cancelled job',
-      createdAt: new Date('2024-01-05T16:00:00')
+      createdAt: new Date('2025-10-05T16:00:00') // Updated to recent past
     }
   ]
 
@@ -400,18 +400,20 @@ describe('TransactionHistory Component', () => {
       mockUseAuth.mockReturnValue(createMockAuthContext(mockJobSeeker))
     })
 
-    it('should paginate transactions when there are more than 20', async () => {
-      const manyTransactions = Array.from({ length: 25 }, (_, i) => ({
-        id: `txn-${i}`,
-        userId: 'user-123',
-        type: 'earnings' as const,
-        amount: 100,
-        currency: 'ZAR' as const,
-        status: 'completed' as const,
-        description: `Transaction ${i}`,
-        createdAt: new Date()
-      }))
+    const generateMockTransactions = (count: number) => Array.from({ length: count }, (_, i) => ({
+      id: `txn-${i}`,
+      userId: 'user-123',
+      type: 'earnings' as const,
+      amount: 100,
+      currency: 'ZAR' as const,
+      status: 'completed' as const,
+      description: `Transaction ${i}`,
+      // Generate dates from most recent to oldest
+      createdAt: new Date(2025, 9, 30 - i) // October 30 going backwards
+    }))
 
+    it('should paginate transactions when there are more than 20', async () => {
+      const manyTransactions = generateMockTransactions(25)
       ;(PaymentService.getUserPaymentHistory as jest.Mock).mockResolvedValue(manyTransactions)
 
       render(<TransactionHistory />)
@@ -422,17 +424,7 @@ describe('TransactionHistory Component', () => {
     })
 
     it('should navigate to next page', async () => {
-      const manyTransactions = Array.from({ length: 25 }, (_, i) => ({
-        id: `txn-${i}`,
-        userId: 'user-123',
-        type: 'earnings' as const,
-        amount: 100,
-        currency: 'ZAR' as const,
-        status: 'completed' as const,
-        description: `Transaction ${i}`,
-        createdAt: new Date()
-      }))
-
+      const manyTransactions = generateMockTransactions(25)
       ;(PaymentService.getUserPaymentHistory as jest.Mock).mockResolvedValue(manyTransactions)
 
       render(<TransactionHistory />)
@@ -450,17 +442,7 @@ describe('TransactionHistory Component', () => {
     })
 
     it('should disable previous button on first page', async () => {
-      const manyTransactions = Array.from({ length: 25 }, (_, i) => ({
-        id: `txn-${i}`,
-        userId: 'user-123',
-        type: 'earnings' as const,
-        amount: 100,
-        currency: 'ZAR' as const,
-        status: 'completed' as const,
-        description: `Transaction ${i}`,
-        createdAt: new Date()
-      }))
-
+      const manyTransactions = generateMockTransactions(25)
       ;(PaymentService.getUserPaymentHistory as jest.Mock).mockResolvedValue(manyTransactions)
 
       render(<TransactionHistory />)
@@ -472,17 +454,7 @@ describe('TransactionHistory Component', () => {
     })
 
     it('should disable next button on last page', async () => {
-      const manyTransactions = Array.from({ length: 25 }, (_, i) => ({
-        id: `txn-${i}`,
-        userId: 'user-123',
-        type: 'earnings' as const,
-        amount: 100,
-        currency: 'ZAR' as const,
-        status: 'completed' as const,
-        description: `Transaction ${i}`,
-        createdAt: new Date()
-      }))
-
+      const manyTransactions = generateMockTransactions(25)
       ;(PaymentService.getUserPaymentHistory as jest.Mock).mockResolvedValue(manyTransactions)
 
       render(<TransactionHistory />)

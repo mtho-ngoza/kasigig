@@ -237,102 +237,108 @@ service cloud.firestore {
     }
 
     // ========================================
-    // Payments Collection
+    // Payment Collections
     // ========================================
     match /payments/{paymentId} {
-      // Employer, worker, and admin can read payment
+      // Allow involved parties to read payment details
       allow read: if isAuthenticated() &&
+                   (request.auth.uid == resource.data.employerId ||
+                    request.auth.uid == resource.data.workerId ||
+                    isAdmin());
+
+      // Allow employers to create payments
+      allow create: if isAuthenticated() &&
+                    hasRequiredFields(['employerId', 'workerId', 'amount', 'gigId']) &&
+                    request.resource.data.employerId == request.auth.uid;
+
+      // Allow employer and worker to update status
+      allow update: if isAuthenticated() &&
                     (request.auth.uid == resource.data.employerId ||
                      request.auth.uid == resource.data.workerId ||
                      isAdmin());
-
-      // Only employers can create payments (initiating escrow)
-      allow create: if isAuthenticated() &&
-                      hasRequiredFields(['gigId', 'employerId', 'workerId', 'amount']) &&
-                      request.resource.data.employerId == request.auth.uid &&
-                      request.resource.data.amount > 0 &&
-                      request.resource.data.escrowStatus == 'pending' &&
-                      exists(/databases/$(database)/documents/gigs/$(request.resource.data.gigId));
-
-      // Employers can update payment status (release escrow)
-      // Workers can dispute
-      allow update: if isAuthenticated() &&
-                      (
-                        // Employer releasing payment
-                        (request.auth.uid == resource.data.employerId &&
-                         request.resource.data.workerId == resource.data.workerId) ||
-                        // Worker disputing payment
-                        (request.auth.uid == resource.data.workerId) ||
-                        // Admin managing disputes
-                        isAdmin()
-                      );
-
-      // Only admin can delete payments
-      allow delete: if isAdmin();
     }
 
-    // ========================================
-    // Payment Methods Collection
-    // ========================================
     match /paymentMethods/{methodId} {
-      // Users can only read their own payment methods
+      // Allow users to read their own payment methods
       allow read: if isAuthenticated() &&
+                   (resource.data.userId == request.auth.uid || isAdmin());
+
+      // Allow users to create their own payment methods
+      allow create: if isAuthenticated() &&
+                    hasRequiredFields(['userId']) &&
+                    request.resource.data.userId == request.auth.uid;
+
+      // Allow users to update their own payment methods
+      allow update: if isAuthenticated() &&
                     resource.data.userId == request.auth.uid;
 
-      // Users can create their own payment methods
-      allow create: if isAuthenticated() &&
-                      hasRequiredFields(['type', 'userId']) &&
-                      request.resource.data.userId == request.auth.uid;
-
-      // Users can update their own payment methods
-      allow update: if isAuthenticated() &&
-                      resource.data.userId == request.auth.uid &&
-                      request.resource.data.userId == resource.data.userId;
-
-      // Users can delete their own payment methods
+      // Allow users to delete their own payment methods
       allow delete: if isAuthenticated() &&
-                      resource.data.userId == request.auth.uid;
+                    resource.data.userId == request.auth.uid;
     }
 
-    // ========================================
-    // Withdrawals Collection
-    // ========================================
-    match /withdrawals/{withdrawalId} {
-      // Users can read their own withdrawals, admins can read all
+    match /paymentIntents/{intentId} {
+      // Allow involved parties to read payment intents
       allow read: if isAuthenticated() &&
-                    (request.auth.uid == resource.data.userId || isAdmin());
+                   (request.auth.uid == resource.data.employerId ||
+                    request.auth.uid == resource.data.workerId ||
+                    isAdmin());
 
-      // Users can create withdrawal requests for their own account
+      // Allow employers to create payment intents
       allow create: if isAuthenticated() &&
-                      hasRequiredFields(['userId', 'amount', 'paymentMethodId']) &&
-                      request.resource.data.userId == request.auth.uid &&
-                      request.resource.data.amount >= 50 && // Minimum R50
-                      request.resource.data.status == 'pending';
+                    hasRequiredFields(['employerId', 'workerId', 'amount', 'gigId']) &&
+                    request.resource.data.employerId == request.auth.uid;
 
-      // Only users can cancel pending withdrawals, admins can update status
+      // Allow employer and worker to update status
       allow update: if isAuthenticated() &&
-                      (
-                        (request.auth.uid == resource.data.userId &&
-                         resource.data.status == 'pending') ||
-                        isAdmin()
-                      );
-
-      // Users and admins can delete
-      allow delete: if isAuthenticated() &&
-                      (request.auth.uid == resource.data.userId || isAdmin());
+                    (request.auth.uid == resource.data.employerId ||
+                     request.auth.uid == resource.data.workerId ||
+                     isAdmin());
     }
 
-    // ========================================
-    // Fee Configuration Collection (Admin Only)
-    // ========================================
-    match /feeConfigs/{configId} {
-      // Anyone can read fee configuration (public information)
-      allow read: if true;
+    match /escrowAccounts/{accountId} {
+      // Allow involved parties to read escrow accounts
+      allow read: if isAuthenticated() &&
+                   (request.auth.uid == resource.data.employerId ||
+                    request.auth.uid == resource.data.workerId ||
+                    isAdmin());
 
-      // Only admins can create, update, or delete fee configs
-      allow create: if isAdmin();
-      allow update: if isAdmin();
-      allow delete: if isAdmin();
+      // Allow payment participants to create escrow accounts
+      allow create: if isAuthenticated() &&
+                    hasRequiredFields(['employerId', 'workerId', 'totalAmount', 'status']) &&
+                    (request.auth.uid == request.resource.data.employerId ||
+                     request.auth.uid == request.resource.data.workerId ||
+                     isAdmin());
+
+      // Allow involved parties to update escrow accounts
+      allow update: if isAuthenticated() &&
+                    (request.auth.uid == resource.data.employerId ||
+                     request.auth.uid == resource.data.workerId ||
+                     isAdmin());
+    }
+
+    match /paymentHistory/{historyId} {
+      // Allow users to read their own payment history
+      allow read: if isAuthenticated() &&
+                   request.auth.uid == resource.data.userId;
+
+      // Allow payment participants to create history records
+      allow create: if isAuthenticated() &&
+                    hasRequiredFields(['userId', 'type', 'amount']) &&
+                    (
+                      // Direct owner
+                      request.auth.uid == request.resource.data.userId ||
+                      // Payment participants
+                      (request.resource.data.paymentId != null &&
+                       exists(/databases/$(database)/documents/payments/$(request.resource.data.paymentId)) &&
+                       (
+                         request.auth.uid == get(/databases/$(database)/documents/payments/$(request.resource.data.paymentId)).data.employerId ||
+                         request.auth.uid == get(/databases/$(database)/documents/payments/$(request.resource.data.paymentId)).data.workerId
+                       ))
+                    );
+
+      // Payment history records are immutable
+      allow update, delete: if false;
     }
 
     // ========================================
@@ -533,50 +539,6 @@ service cloud.firestore {
       // Users can delete their own history, admins can delete any
       allow delete: if isAuthenticated() &&
                       (request.auth.uid == resource.data.userId || isAdmin());
-    }
-
-    // ========================================
-    // Payment Intents Collection
-    // ========================================
-    match /paymentIntents/{intentId} {
-      // Users can read their own payment intents
-      allow read: if isAuthenticated() &&
-                    (request.auth.uid == resource.data.employerId ||
-                     request.auth.uid == resource.data.workerId);
-
-      // Users can create payment intents
-      allow create: if isAuthenticated() &&
-                      hasRequiredFields(['gigId', 'employerId', 'workerId', 'amount']) &&
-                      request.resource.data.employerId == request.auth.uid;
-
-      // System/admin can update payment intent status
-      allow update: if isAuthenticated() &&
-                      (request.auth.uid == resource.data.employerId || isAdmin());
-
-      // Only admins can delete payment intents
-      allow delete: if isAdmin();
-    }
-
-    // ========================================
-    // Escrow Accounts Collection
-    // ========================================
-    match /escrowAccounts/{escrowId} {
-      // Employer, worker, and admin can read escrow accounts
-      allow read: if isAuthenticated() &&
-                    (request.auth.uid == resource.data.employerId ||
-                     request.auth.uid == resource.data.workerId ||
-                     isAdmin());
-
-      // System/admin can create escrow accounts
-      allow create: if isAuthenticated() &&
-                      hasRequiredFields(['paymentId', 'gigId', 'employerId', 'workerId', 'totalAmount']);
-
-      // Employer can release escrow, admin can manage
-      allow update: if isAuthenticated() &&
-                      (request.auth.uid == resource.data.employerId || isAdmin());
-
-      // Only admins can delete escrow accounts
-      allow delete: if isAdmin();
     }
 
     // ========================================
