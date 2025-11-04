@@ -7,15 +7,15 @@ export class WalletService {
    * Credit worker's wallet when escrow is released
    */
   static async creditWallet(userId: string, amount: number): Promise<void> {
+    const userRef = doc(db, 'users', userId)
+
+    // First check if user exists and has wallet fields
+    const userDoc = await getDoc(userRef)
+    if (!userDoc.exists()) {
+      throw new Error('User not found')
+    }
+
     try {
-      const userRef = doc(db, 'users', userId)
-
-      // First check if user exists and has wallet fields
-      const userDoc = await getDoc(userRef)
-      if (!userDoc.exists()) {
-        throw new Error('User not found')
-      }
-
       const userData = userDoc.data()
 
       // Initialize wallet if fields don't exist
@@ -43,21 +43,21 @@ export class WalletService {
    * Debit worker's wallet when withdrawal is processed
    */
   static async debitWallet(userId: string, amount: number): Promise<void> {
+    const userRef = doc(db, 'users', userId)
+    const userDoc = await getDoc(userRef)
+
+    if (!userDoc.exists()) {
+      throw new Error('User not found')
+    }
+
+    const userData = userDoc.data() as User
+    const currentBalance = userData.walletBalance || 0
+
+    if (currentBalance < amount) {
+      throw new Error('Insufficient balance')
+    }
+
     try {
-      const userRef = doc(db, 'users', userId)
-      const userDoc = await getDoc(userRef)
-
-      if (!userDoc.exists()) {
-        throw new Error('User not found')
-      }
-
-      const userData = userDoc.data() as User
-      const currentBalance = userData.walletBalance || 0
-
-      if (currentBalance < amount) {
-        throw new Error('Insufficient balance')
-      }
-
       await updateDoc(userRef, {
         walletBalance: increment(-amount),
         totalWithdrawn: increment(amount),
@@ -72,15 +72,15 @@ export class WalletService {
    * Update pending balance when payment goes into escrow
    */
   static async updatePendingBalance(userId: string, amount: number): Promise<void> {
+    const userRef = doc(db, 'users', userId)
+
+    // First check if user exists and has wallet fields
+    const userDoc = await getDoc(userRef)
+    if (!userDoc.exists()) {
+      throw new Error('User not found')
+    }
+
     try {
-      const userRef = doc(db, 'users', userId)
-
-      // First check if user exists and has wallet fields
-      const userDoc = await getDoc(userRef)
-      if (!userDoc.exists()) {
-        throw new Error('User not found')
-      }
-
       const userData = userDoc.data()
 
       // Initialize wallet if fields don't exist
@@ -107,15 +107,15 @@ export class WalletService {
    * Transfer from pending to wallet when escrow is released
    */
   static async movePendingToWallet(userId: string, amount: number): Promise<void> {
+    const userRef = doc(db, 'users', userId)
+
+    // First check if user exists and has wallet fields
+    const userDoc = await getDoc(userRef)
+    if (!userDoc.exists()) {
+      throw new Error('User not found')
+    }
+
     try {
-      const userRef = doc(db, 'users', userId)
-
-      // First check if user exists and has wallet fields
-      const userDoc = await getDoc(userRef)
-      if (!userDoc.exists()) {
-        throw new Error('User not found')
-      }
-
       const userData = userDoc.data()
 
       // Initialize wallet if fields don't exist
@@ -149,12 +149,20 @@ export class WalletService {
     totalEarnings: number
     totalWithdrawn: number
   }> {
+    const defaultBalance = {
+      walletBalance: 0,
+      pendingBalance: 0,
+      totalEarnings: 0,
+      totalWithdrawn: 0
+    }
+
     try {
       const userRef = doc(db, 'users', userId)
       const userDoc = await getDoc(userRef)
 
       if (!userDoc.exists()) {
-        throw new Error('User not found')
+        console.debug('Error getting wallet balance:', new Error('User not found'))
+        return defaultBalance
       }
 
       const userData = userDoc.data() as User
@@ -167,12 +175,7 @@ export class WalletService {
       }
     } catch (error) {
       console.debug('Error getting wallet balance:', error)
-      return {
-        walletBalance: 0,
-        pendingBalance: 0,
-        totalEarnings: 0,
-        totalWithdrawn: 0
-      }
+      return defaultBalance
     }
   }
 
@@ -180,14 +183,14 @@ export class WalletService {
    * Initialize wallet fields for existing users (migration helper)
    */
   static async initializeWallet(userId: string): Promise<void> {
+    const userRef = doc(db, 'users', userId)
+    const userDoc = await getDoc(userRef)
+
+    if (!userDoc.exists()) {
+      throw new Error('User not found')
+    }
+
     try {
-      const userRef = doc(db, 'users', userId)
-      const userDoc = await getDoc(userRef)
-
-      if (!userDoc.exists()) {
-        throw new Error('User not found')
-      }
-
       const userData = userDoc.data() as User
 
       // Only initialize if not already set
@@ -201,7 +204,6 @@ export class WalletService {
         })
       }
     } catch (error) {
-      console.debug('Error initializing wallet:', error)
       throw new Error(error instanceof Error ? error.message : 'Failed to initialize wallet')
     }
   }

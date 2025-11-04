@@ -9,8 +9,11 @@ import TransactionHistory from '@/components/wallet/TransactionHistory'
 import { PaymentService } from '@/lib/services/paymentService'
 import { PaymentHistory } from '@/types/payment'
 import { useAuth } from '@/contexts/AuthContext'
+import type { AuthContextType } from '@/contexts/AuthContext'
+import type { User } from '@/types/auth'
 
 // Mock dependencies
+const mockUseAuth = useAuth as jest.MockedFunction<typeof useAuth>
 jest.mock('@/contexts/AuthContext', () => ({
   useAuth: jest.fn()
 }))
@@ -21,21 +24,39 @@ jest.mock('@/lib/services/paymentService', () => ({
   }
 }))
 
+// Helper function to create mock auth context
+const createMockAuthContext = (user: User | null = null): AuthContextType => ({
+  user,
+  isLoading: false,
+  isAuthenticated: !!user,
+  login: jest.fn().mockResolvedValue({ success: true, message: 'Success' }),
+  register: jest.fn().mockResolvedValue({ success: true, message: 'Success' }),
+  logout: jest.fn().mockResolvedValue(undefined),
+  updateUser: jest.fn().mockResolvedValue(undefined),
+  refreshUser: jest.fn().mockResolvedValue(undefined)
+})
+
 describe('TransactionHistory Component', () => {
-  const mockJobSeeker = {
+  const mockJobSeeker: User = {
     id: 'user-123',
     email: 'worker@example.com',
     userType: 'job-seeker',
     firstName: 'John',
-    lastName: 'Worker'
+    lastName: 'Worker',
+    phone: '+27123456789',
+    location: 'Cape Town',
+    createdAt: new Date('2024-01-01')
   }
 
-  const mockEmployer = {
+  const mockEmployer: User = {
     id: 'employer-123',
     email: 'employer@example.com',
     userType: 'employer',
     firstName: 'Jane',
-    lastName: 'Employer'
+    lastName: 'Employer',
+    phone: '+27987654321',
+    location: 'Johannesburg',
+    createdAt: new Date('2024-01-01')
   }
 
   const mockTransactions: PaymentHistory[] = [
@@ -95,11 +116,13 @@ describe('TransactionHistory Component', () => {
 
   beforeEach(() => {
     jest.clearAllMocks()
+    // Set up default mock implementation
+    mockUseAuth.mockReturnValue(createMockAuthContext(null))
   })
 
   describe('Access Control', () => {
     it('should show transaction history for job seekers', async () => {
-      useAuth.mockReturnValue({ user: mockJobSeeker })
+      mockUseAuth.mockReturnValue(createMockAuthContext(mockJobSeeker))
       ;(PaymentService.getUserPaymentHistory as jest.Mock).mockResolvedValue(mockTransactions)
 
       render(<TransactionHistory />)
@@ -110,7 +133,7 @@ describe('TransactionHistory Component', () => {
     })
 
     it('should show access denied for employers', () => {
-      useAuth.mockReturnValue({ user: mockEmployer })
+      mockUseAuth.mockReturnValue(createMockAuthContext(mockEmployer))
 
       render(<TransactionHistory />)
 
@@ -119,7 +142,7 @@ describe('TransactionHistory Component', () => {
     })
 
     it('should return null when no user is logged in', () => {
-      useAuth.mockReturnValue({ user: null })
+      mockUseAuth.mockReturnValue(createMockAuthContext(null))
 
       const { container } = render(<TransactionHistory />)
 
@@ -128,8 +151,11 @@ describe('TransactionHistory Component', () => {
   })
 
   describe('Loading State', () => {
+    beforeEach(() => {
+      mockUseAuth.mockReturnValue(createMockAuthContext(mockJobSeeker))
+    })
+
     it('should show loading spinner while fetching transactions', () => {
-      useAuth.mockReturnValue({ user: mockJobSeeker })
       ;(PaymentService.getUserPaymentHistory as jest.Mock).mockImplementation(
         () => new Promise(() => {}) // Never resolves
       )
@@ -141,7 +167,6 @@ describe('TransactionHistory Component', () => {
     })
 
     it('should hide loading spinner after data loads', async () => {
-      useAuth.mockReturnValue({ user: mockJobSeeker })
       ;(PaymentService.getUserPaymentHistory as jest.Mock).mockResolvedValue(mockTransactions)
 
       const { container } = render(<TransactionHistory />)
@@ -154,7 +179,7 @@ describe('TransactionHistory Component', () => {
 
   describe('Transaction Display', () => {
     beforeEach(() => {
-      useAuth.mockReturnValue({ user: mockJobSeeker })
+      mockUseAuth.mockReturnValue(createMockAuthContext(mockJobSeeker))
     })
 
     it('should display all transactions', async () => {
@@ -234,7 +259,7 @@ describe('TransactionHistory Component', () => {
 
   describe('Summary Statistics', () => {
     beforeEach(() => {
-      useAuth.mockReturnValue({ user: mockJobSeeker })
+      mockUseAuth.mockReturnValue(createMockAuthContext(mockJobSeeker))
     })
 
     it('should calculate total earnings correctly', async () => {
@@ -288,7 +313,7 @@ describe('TransactionHistory Component', () => {
 
   describe('Filtering', () => {
     beforeEach(() => {
-      useAuth.mockReturnValue({ user: mockJobSeeker })
+      mockUseAuth.mockReturnValue(createMockAuthContext(mockJobSeeker))
       ;(PaymentService.getUserPaymentHistory as jest.Mock).mockResolvedValue(mockTransactions)
     })
 
@@ -372,7 +397,7 @@ describe('TransactionHistory Component', () => {
 
   describe('Pagination', () => {
     beforeEach(() => {
-      useAuth.mockReturnValue({ user: mockJobSeeker })
+      mockUseAuth.mockReturnValue(createMockAuthContext(mockJobSeeker))
     })
 
     it('should paginate transactions when there are more than 20', async () => {
@@ -481,7 +506,7 @@ describe('TransactionHistory Component', () => {
 
   describe('Error Handling', () => {
     beforeEach(() => {
-      useAuth.mockReturnValue({ user: mockJobSeeker })
+      mockUseAuth.mockReturnValue(createMockAuthContext(mockJobSeeker))
     })
 
     it('should display error message when loading fails', async () => {
@@ -512,7 +537,7 @@ describe('TransactionHistory Component', () => {
 
   describe('Close Functionality', () => {
     beforeEach(() => {
-      useAuth.mockReturnValue({ user: mockJobSeeker })
+      mockUseAuth.mockReturnValue(createMockAuthContext(mockJobSeeker))
       ;(PaymentService.getUserPaymentHistory as jest.Mock).mockResolvedValue(mockTransactions)
     })
 

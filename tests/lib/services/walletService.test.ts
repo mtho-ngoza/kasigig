@@ -3,7 +3,7 @@
  */
 
 import { WalletService } from '@/lib/services/walletService'
-import { doc, updateDoc, getDoc, increment } from 'firebase/firestore'
+import { doc, updateDoc, getDoc } from 'firebase/firestore'
 import { db } from '@/lib/firebase'
 
 // Mock Firebase
