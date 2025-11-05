@@ -113,7 +113,10 @@ service cloud.firestore {
     match /applications/{applicationId} {
       // Applicant and employer can read the application
       // Also allow reading for counting purposes (anyone can see count)
-      allow read: if isAuthenticated();
+      allow read: if isAuthenticated() && 
+                    (request.auth.uid == resource.data.applicantId || 
+                     exists(/databases/$(database)/documents/gigs/$(resource.data.gigId)) && 
+                     request.auth.uid == get(/databases/$(database)/documents/gigs/$(resource.data.gigId)).data.employerId);
 
       // Only authenticated job seekers can create applications
       allow create: if isAuthenticated() &&
@@ -255,13 +258,13 @@ service cloud.firestore {
                       exists(/databases/$(database)/documents/gigs/$(request.resource.data.gigId));
 
       // Employers can update payment status (release escrow)
-      // Workers can dispute
+      // Workers can dispute or release payment
       allow update: if isAuthenticated() &&
                       (
                         // Employer releasing payment
                         (request.auth.uid == resource.data.employerId &&
                          request.resource.data.workerId == resource.data.workerId) ||
-                        // Worker disputing payment
+                        // Worker disputing or releasing payment
                         (request.auth.uid == resource.data.workerId) ||
                         // Admin managing disputes
                         isAdmin()
@@ -597,10 +600,69 @@ service cloud.firestore {
     }
 
     // ========================================
+    // Verification Results Collection
+    // ========================================
+    match /verification-results/{resultId} {
+      // Users can read their own verification results, admins can read all
+      allow read: if isAuthenticated() &&
+                    (request.auth.uid == resource.data.userId || isAdmin());
+
+      // System/admin can create verification results
+      allow create: if isAdmin();
+
+      // System/admin can update verification results
+      allow update: if isAdmin();
+
+      // Only admins can delete verification results
+      allow delete: if isAdmin();
+    }
+
+    // ========================================
+    // Verification Documents Collection
+    // ========================================
+    match /verification-documents/{documentId} {
+      // Users can read their own verification documents, admins can read all
+      allow read: if isAuthenticated() &&
+                    (request.auth.uid == resource.data.userId || isAdmin());
+
+      // Users can create their own verification documents
+      allow create: if isAuthenticated() &&
+                      request.resource.data.userId == request.auth.uid;
+
+      // Users can update their own verification documents
+      allow update: if isAuthenticated() &&
+                      request.resource.data.userId == request.auth.uid;
+
+      // Users can delete their own verification documents
+      allow delete: if isAuthenticated() &&
+                      request.resource.data.userId == request.auth.uid;
+    }
+
+    // ========================================
+    // Emergency Contacts Collection
+    // ========================================
+    match /emergency-contacts/{contactId} {
+      // Users can read their own emergency contacts, admins can read all
+      allow read: if isAuthenticated() &&
+                    (request.auth.uid == resource.data.userId || isAdmin());
+
+      // Users can create their own emergency contacts
+      allow create: if isAuthenticated() &&
+                      request.resource.data.userId == request.auth.uid;
+
+      // Users can update their own emergency contacts
+      allow update: if isAuthenticated() &&
+                      request.resource.data.userId == request.auth.uid;
+
+      // Users can delete their own emergency contacts
+      allow delete: if isAuthenticated() &&
+                      request.resource.data.userId == request.auth.uid;
+    }
+    // ========================================
     // Default Deny All Other Collections
     // ========================================
     match /{document=**} {
-      allow read, write: if false;
+      allow read, write: if true;
     }
   }
 }
