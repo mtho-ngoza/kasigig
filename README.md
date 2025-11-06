@@ -539,13 +539,14 @@ firebase deploy --only storage
 ```
 
 **Verification checklist:**
-- [ ] Users can only read/write their own data
-- [ ] Employers can only manage their own gigs
-- [ ] Applications restricted to applicant and employer
-- [ ] Profile photos upload correctly with size limits
-- [ ] ID documents properly secured (no public access)
+- [x] Users can only read/write their own data ✅
+- [x] Employers can only manage their own gigs ✅
+- [x] Applications readable for counts, writable by parties only ✅
+- [x] Profile photos upload correctly with size limits ✅
+- [x] ID documents properly secured (no public access) ✅
+- [x] Default deny for undefined collections ✅
 
-**⚠️ Current Status**: Development rules are OPEN - MUST deploy production rules!
+**✅ Status**: Production security rules deployed and tested! See SECURITY_RULES.md for details.
 
 #### 3.5 Configure Vercel CI Checks (Day 3-5) 🔧
 **Priority**: HIGH - Prevent broken deployments
@@ -994,14 +995,14 @@ firebase deploy --only firestore:rules,storage
 - [x] **Job seeker profile viewing** - Employers can view full applicant profiles when reviewing applications. Includes work history, skills, portfolio, languages, certifications, verification status, and trust score (defaults to 50 for new users). Profile dialog integrated into application management workflow with "View Profile" button on each application. ✅
 - [x] **Worker wallet & withdrawal system** - Digital wallet with pending (escrow) and available balances, comprehensive earnings dashboard for job seekers, secure withdrawal requests with South African bank details, automatic balance updates on payment and escrow release, role-based access (job-seekers only), with 30 comprehensive tests. ✅
 - [x] **Withdrawal balance validation** - Prevents double-spending by validating available balance and deducting funds when withdrawal is requested (not when completed). Includes automatic refund on rejection and comprehensive test coverage. ✅
-- [ ] **Admin withdrawal approval dashboard (Phase 1 - In Progress)** - Admin dashboard to view, approve, and reject withdrawal requests. Workers see real-time status updates. Virtual deposits for MVP (no bank transfer integration yet). Essential for soft launch.
-- [ ] **Worker withdrawal history view** - Transaction history component showing all withdrawal requests with status tracking (pending/processing/completed/failed).
+- [x] **Admin withdrawal approval dashboard (Phase 1)** - Admin dashboard to view, approve, and reject withdrawal requests. Workers see real-time status updates with withdrawal history component. Virtual deposits for MVP (no bank transfer integration yet). ✅
+- [x] **Worker withdrawal history view** - Transaction history component showing all withdrawal requests with status tracking (pending/processing/completed/failed). ✅
+- [x] **Firestore security rules** - Production-ready security rules deployed with comprehensive access control, default deny for undefined collections, and public read for gigs/applications counting. Includes detailed documentation in SECURITY_RULES.md. ✅
+- [ ] **Review and rating system** - Post-gig completion ratings (1-5 stars) with text reviews, displayed on user profiles, anti-fraud measures (only verified completed gigs), review moderation tools, and review response capability.
 - [ ] **Payment flow improvements (Pre-Launch)** - Add payment status warnings for workers ("Don't start work until funded"), employer payment reminders when accepting applications, employer payment dashboard to track outgoing payments.
 - [ ] **Application withdrawal (Pre-Launch)** - Allow job seekers to withdraw their pending applications for any reason. Gives workers control and flexibility if they find another job, change their mind, or circumstances change. Important for informal sector where opportunities can come up quickly. Also prevents workers from being stuck in unfunded applications.
 - [ ] **Browse Talent page** - Currently "Browse Talent" redirects to Browse Gigs instead of showing job seeker profiles. Employers need to proactively find workers by skills, location, ratings, verification status.
 - [ ] **Max applicants limit** - Let employers specify how many applicants they want to review (e.g., "5 applicants max"). Shows job seekers "3/5 applicants" so they know if it's worth applying. Auto-closes gig to "reviewing" when limit reached. Critical for informal work where employers typically choose from first 3-5 applicants.
-- [ ] **Firestore security rules** implementation for production
-- [ ] **Review and rating system** with trust building features
 - [ ] **Milestone-based payments** for project-based work enhancement
 
 ### Post-Launch Enhancements (Month 3+)
