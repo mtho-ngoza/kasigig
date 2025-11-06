@@ -8,6 +8,7 @@ import { LocationProvider } from '@/contexts/LocationContext'
 import { PaymentProvider } from '@/contexts/PaymentContext'
 import { ErrorBoundary } from '@/components/ErrorBoundary'
 import { AppLayout } from '@/components/layout/AppLayout'
+import { DevUtilsLoader } from '@/components/DevUtilsLoader'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -53,6 +54,7 @@ export default function RootLayout({
       <head>
       </head>
       <body className={inter.className}>
+        <DevUtilsLoader />
         <ErrorBoundary>
           <ToastProvider>
             <LocationProvider>

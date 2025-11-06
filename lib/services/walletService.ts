@@ -241,4 +241,30 @@ export class WalletService {
       throw new Error(error instanceof Error ? error.message : 'Failed to initialize wallet')
     }
   }
+
+  /**
+   * Reset wallet balances to zero (FOR DEVELOPMENT/TESTING ONLY)
+   * Use this to clear old test data from user wallet
+   */
+  static async resetWallet(userId: string): Promise<void> {
+    const userRef = doc(db, 'users', userId)
+    const userDoc = await getDoc(userRef)
+
+    if (!userDoc.exists()) {
+      throw new Error('User not found')
+    }
+
+    try {
+      await updateDoc(userRef, {
+        walletBalance: 0,
+        pendingBalance: 0,
+        totalEarnings: 0,
+        totalWithdrawn: 0,
+        updatedAt: Timestamp.now()
+      })
+      console.log(`Wallet reset to zero for user: ${userId}`)
+    } catch (error) {
+      throw new Error(error instanceof Error ? error.message : 'Failed to reset wallet')
+    }
+  }
 }
