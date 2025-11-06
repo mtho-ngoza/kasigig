@@ -111,12 +111,10 @@ service cloud.firestore {
     // Applications Collection
     // ========================================
     match /applications/{applicationId} {
-      // Applicant and employer can read the application
-      // Also allow reading for counting purposes (anyone can see count)
-      allow read: if isAuthenticated() && 
-                    (request.auth.uid == resource.data.applicantId || 
-                     exists(/databases/$(database)/documents/gigs/$(resource.data.gigId)) && 
-                     request.auth.uid == get(/databases/$(database)/documents/gigs/$(resource.data.gigId)).data.employerId);
+      // Anyone can read applications for counting and public display
+      // This allows showing application counts on gig cards
+      // Note: Sensitive details should be handled at the application layer
+      allow read: if true;
 
       // Only authenticated job seekers can create applications
       allow create: if isAuthenticated() &&
