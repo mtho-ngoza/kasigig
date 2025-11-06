@@ -12,6 +12,7 @@ export default function WithdrawalHistory() {
   const [withdrawals, setWithdrawals] = useState<WithdrawalRequest[]>([])
   const [filteredWithdrawals, setFilteredWithdrawals] = useState<WithdrawalRequest[]>([])
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
   const [filter, setFilter] = useState<FilterStatus>('all')
 
   useEffect(() => {
@@ -33,10 +34,14 @@ export default function WithdrawalHistory() {
 
     try {
       setLoading(true)
+      setError(null)
+      console.log('Loading withdrawals for user:', user.id)
       const data = await PaymentService.getUserWithdrawals(user.id)
+      console.log('Withdrawal data loaded:', data.length, 'items')
       setWithdrawals(data)
     } catch (error) {
       console.error('Error loading withdrawal history:', error)
+      setError(error instanceof Error ? error.message : 'Failed to load withdrawal history')
     } finally {
       setLoading(false)
     }
@@ -80,6 +85,26 @@ export default function WithdrawalHistory() {
       <div className="text-center py-8">
         <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-blue-600 border-r-transparent"></div>
         <p className="mt-4 text-gray-600">Loading withdrawal history...</p>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="bg-red-50 rounded-lg border border-red-200 p-8 text-center">
+        <div className="text-red-400 mb-3">
+          <svg className="mx-auto h-12 w-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+        </div>
+        <h3 className="text-lg font-medium text-red-900 mb-1">Failed to Load Withdrawals</h3>
+        <p className="text-red-600 mb-4">{error}</p>
+        <button
+          onClick={() => loadWithdrawals()}
+          className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+        >
+          Try Again
+        </button>
       </div>
     )
   }

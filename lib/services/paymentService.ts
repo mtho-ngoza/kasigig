@@ -745,7 +745,11 @@ export class PaymentService {
       } as WithdrawalRequest))
     } catch (error) {
       console.debug('Error fetching user withdrawals:', error)
-      return []
+      // Check if this is a Firestore index error
+      if (isFirebaseError(error) && error.code === 'failed-precondition') {
+        throw new Error('Database index required. Please contact support or check browser console for index creation link.')
+      }
+      throw new Error('Failed to fetch withdrawal history')
     }
   }
 
