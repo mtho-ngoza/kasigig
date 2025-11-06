@@ -253,6 +253,105 @@ describe('PaymentService - Wallet Integration', () => {
     })
   })
 
+  describe('Escrow Integration: processPayment → releaseEscrow', () => {
+    it('should correctly update pendingBalance when payment processed, then move to wallet when escrow released', async () => {
+      // SETUP: Mock for processPayment
+      const mockPaymentMethodDoc = {
+        exists: () => true,
+        id: 'pm-123',
+        data: () => ({
+          type: 'card',
+          provider: 'payfast',
+          isDefault: true,
+          isVerified: true
+        })
+      }
+
+      const mockIntentDoc = {
+        exists: () => true,
+        data: () => ({
+          gigId: mockGigId,
+          employerId: mockEmployerId,
+          workerId: mockWorkerId,
+          amount: mockAmount,
+          currency: 'ZAR',
+          paymentMethodId: 'pm-123',
+          type: 'fixed',
+          status: 'created'
+        })
+      }
+
+      const mockGig = {
+        id: mockGigId,
+        title: 'Test Gig',
+        budget: mockAmount,
+        employerId: mockEmployerId
+      }
+
+      // Setup mocks for processPayment
+      ;(getDoc as jest.Mock)
+        .mockResolvedValueOnce(mockIntentDoc) // First call for payment intent
+        .mockResolvedValueOnce(mockPaymentMethodDoc) // Second call for payment method
+      ;(doc as jest.Mock).mockReturnValue('mock-doc-ref')
+      ;(addDoc as jest.Mock).mockResolvedValue({ id: 'payment-123' })
+      ;(updateDoc as jest.Mock).mockResolvedValue(undefined)
+      ;(GigService.getGigById as jest.Mock).mockResolvedValue(mockGig)
+      ;(WalletService.updatePendingBalance as jest.Mock).mockResolvedValue(undefined)
+
+      // STEP 1: Process payment (should add to pendingBalance)
+      const payment = await PaymentService.processPayment('intent-123')
+
+      expect(payment.id).toBe('payment-123')
+      expect(WalletService.updatePendingBalance).toHaveBeenCalledWith(mockWorkerId, mockAmount)
+
+      // STEP 2: Verify analytics shows pending balance
+      ;(WalletService.getWalletBalance as jest.Mock).mockResolvedValue({
+        walletBalance: 0,
+        pendingBalance: mockAmount,
+        totalEarnings: 0,
+        totalWithdrawn: 0
+      })
+      ;(getDocs as jest.Mock).mockResolvedValue({ empty: false, docs: [] })
+
+      const analyticsAfterPayment = await PaymentService.getUserPaymentAnalytics(mockWorkerId)
+      expect(analyticsAfterPayment.pendingBalance).toBe(mockAmount)
+      expect(analyticsAfterPayment.availableBalance).toBe(0)
+
+      // STEP 3: Release escrow (should move from pending to wallet)
+      const mockPaymentDoc = {
+        exists: () => true,
+        data: () => ({
+          gigId: mockGigId,
+          employerId: mockEmployerId,
+          workerId: mockWorkerId,
+          amount: mockAmount,
+          status: 'processing',
+          escrowStatus: 'funded'
+        })
+      }
+
+      ;(getDoc as jest.Mock).mockResolvedValue(mockPaymentDoc)
+      ;(WalletService.movePendingToWallet as jest.Mock).mockResolvedValue(undefined)
+
+      await PaymentService.releaseEscrow('payment-123')
+
+      expect(WalletService.movePendingToWallet).toHaveBeenCalledWith(mockWorkerId, mockAmount)
+
+      // STEP 4: Verify analytics shows correct balances after escrow release
+      ;(WalletService.getWalletBalance as jest.Mock).mockResolvedValue({
+        walletBalance: mockAmount,
+        pendingBalance: 0,
+        totalEarnings: mockAmount,
+        totalWithdrawn: 0
+      })
+
+      const analyticsAfterRelease = await PaymentService.getUserPaymentAnalytics(mockWorkerId)
+      expect(analyticsAfterRelease.availableBalance).toBe(mockAmount)
+      expect(analyticsAfterRelease.pendingBalance).toBe(0)
+      expect(analyticsAfterRelease.totalEarnings).toBe(mockAmount)
+    })
+  })
+
   describe('requestWithdrawal', () => {
     it('should use atomic transaction to debit wallet when requesting withdrawal', async () => {
       ;(WalletService.debitWalletAtomic as jest.Mock).mockResolvedValue(undefined)

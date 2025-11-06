@@ -348,10 +348,24 @@ export class PaymentService {
                })
 
                console.debug('Transaction step 7: Updating worker balance...')
-               transaction.update(userRef, {
-                 pendingBalance: increment(intentData.amount),
-                 updatedAt: Timestamp.now()
-               })
+               // Check if wallet fields exist and initialize if needed
+               const userData = userDoc.data()
+               if (userData.pendingBalance === undefined) {
+                 // Initialize wallet fields for first-time payment
+                 transaction.update(userRef, {
+                   walletBalance: 0,
+                   pendingBalance: intentData.amount,
+                   totalEarnings: 0,
+                   totalWithdrawn: 0,
+                   updatedAt: Timestamp.now()
+                 })
+               } else {
+                 // Wallet already initialized, just increment pending balance
+                 transaction.update(userRef, {
+                   pendingBalance: increment(intentData.amount),
+                   updatedAt: Timestamp.now()
+                 })
+               }
 
                console.debug('All transaction steps completed successfully')
                return {
