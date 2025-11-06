@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/Button'
 import { FirestoreService } from '@/lib/database/firestore'
 import { User } from '@/types/auth'
 import { TrustScoreBadge, VerificationBadge } from '@/components/safety/TrustScoreBadge'
-import { RatingDisplay } from '@/components/review'
+import { RatingDisplay, ReviewList } from '@/components/review'
 
 interface JobSeekerProfileDialogProps {
   userId: string
@@ -356,6 +356,18 @@ export default function JobSeekerProfileDialog({
                     </div>
                   </CardContent>
                 </Card>
+              )}
+
+              {/* Reviews Section */}
+              {user.reviewCount && user.reviewCount > 0 && (
+                <div>
+                  <ReviewList
+                    userId={userId}
+                    title="Reviews from Employers"
+                    maxInitialReviews={3}
+                    showLoadMore={true}
+                  />
+                </div>
               )}
 
               {/* Profile Completeness Note */}

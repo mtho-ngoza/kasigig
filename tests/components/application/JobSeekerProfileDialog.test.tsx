@@ -14,13 +14,18 @@ jest.mock('@/components/safety/TrustScoreBadge', () => ({
   VerificationBadge: ({ level }: { level: string }) => <div data-testid="verification-badge">Verified: {level}</div>
 }))
 
-// Mock rating display
+// Mock rating display and review list
 jest.mock('@/components/review', () => ({
   RatingDisplay: ({ rating, reviewCount }: { rating?: number, reviewCount?: number }) => (
     <div data-testid="rating-display">
       {rating?.toFixed(1)} ({reviewCount} reviews)
     </div>
-  )
+  ),
+  ReviewList: ({ userId, title }: { userId: string; title?: string }) => (
+    <div data-testid="review-list">
+      {title || 'Reviews'} for {userId}
+    </div>
+  ),
 }))
 
 describe('JobSeekerProfileDialog', () => {
