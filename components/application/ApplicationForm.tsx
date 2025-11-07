@@ -58,12 +58,13 @@ export default function ApplicationForm({ gig, onSuccess, onCancel }: Applicatio
     loadWorkerEarnings()
   }, [gig.budget, calculateGigFees])
 
-  // Pre-fill experience and equipment from user profile
+  // Pre-fill experience, availability, and equipment from user profile
   useEffect(() => {
     if (user) {
       setFormData(prev => ({
         ...prev,
         experience: user.experienceYears || prev.experience,
+        availability: user.availability || prev.availability,
         equipment: user.equipmentOwnership || prev.equipment
       }))
     }
@@ -284,7 +285,7 @@ export default function ApplicationForm({ gig, onSuccess, onCancel }: Applicatio
             {/* Quick Questions for Physical Work */}
             {isPhysicalWork && (
               <>
-                {(user?.experienceYears || user?.equipmentOwnership) && (
+                {(user?.experienceYears || user?.availability || user?.equipmentOwnership) && (
                   <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-lg">
                     <p className="text-sm text-green-800">
                       💡 <strong>Great news!</strong> We&apos;ve pre-filled some information from your profile to save you time. You can update these if needed for this specific gig.
@@ -332,6 +333,9 @@ export default function ApplicationForm({ gig, onSuccess, onCancel }: Applicatio
                     <option value="within-month">Within a month</option>
                     <option value="flexible">Flexible</option>
                   </select>
+                  {user?.availability && formData.availability === user.availability && (
+                    <p className="mt-1 text-xs text-green-600">✓ Pre-filled from your profile</p>
+                  )}
                 </div>
 
                 {/* Equipment (for Construction/Cleaning) */}
