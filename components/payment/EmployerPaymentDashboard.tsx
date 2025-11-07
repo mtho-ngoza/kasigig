@@ -11,6 +11,7 @@ import { GigApplication } from '@/types/gig'
 import PaymentMethodList from './PaymentMethodList'
 import PaymentMethodForm from './PaymentMethodForm'
 import PaymentHistory from './PaymentHistory'
+import PaymentDialog from './PaymentDialog'
 
 interface EmployerPaymentDashboardProps {
   onBack?: () => void
@@ -29,6 +30,8 @@ export default function EmployerPaymentDashboard({ onBack }: EmployerPaymentDash
   const [currentView, setCurrentView] = useState<'overview' | 'methods' | 'add-method' | 'history' | 'obligations'>('overview')
   const [pendingObligations, setPendingObligations] = useState<PendingObligation[]>([])
   const [isLoadingObligations, setIsLoadingObligations] = useState(false)
+  const [showPaymentDialog, setShowPaymentDialog] = useState(false)
+  const [selectedObligation, setSelectedObligation] = useState<PendingObligation | null>(null)
 
   // Load pending payment obligations
   useEffect(() => {
@@ -163,8 +166,8 @@ export default function EmployerPaymentDashboard({ onBack }: EmployerPaymentDash
                               variant="primary"
                               className="mt-3"
                               onClick={() => {
-                                // TODO: Open payment dialog for this application
-                                window.location.href = `/application/${obligation.application.id}`
+                                setSelectedObligation(obligation)
+                                setShowPaymentDialog(true)
                               }}
                             >
                               Pay Now
@@ -468,6 +471,48 @@ export default function EmployerPaymentDashboard({ onBack }: EmployerPaymentDash
     }
   }
 
+  const handlePaymentSuccess = async () => {
+    setShowPaymentDialog(false)
+    setSelectedObligation(null)
+    // Refresh obligations and analytics
+    await refreshAnalytics()
+    // Trigger a re-load of obligations
+    if (user?.id && user.userType === 'employer') {
+      setIsLoadingObligations(true)
+      try {
+        const gigs = await GigService.getGigsByEmployer(user.id)
+        const allApplicationsPromises = gigs.map(gig =>
+          GigService.getApplicationsByGig(gig.id)
+        )
+        const allApplicationsArrays = await Promise.all(allApplicationsPromises)
+        const applications = allApplicationsArrays.flat()
+        const unpaidApplications = applications.filter(
+          app => app.status === 'accepted' && !app.paymentId
+        )
+        const obligations: PendingObligation[] = []
+        for (const app of unpaidApplications) {
+          try {
+            const gig = await GigService.getGigById(app.gigId)
+            const workerName = app.applicantName || 'Worker'
+            obligations.push({
+              application: app,
+              gigTitle: gig?.title || 'Unknown Gig',
+              workerName,
+              amount: app.proposedRate || gig?.budget || 0
+            })
+          } catch (error) {
+            console.error('Error loading obligation details:', error)
+          }
+        }
+        setPendingObligations(obligations)
+      } catch (error) {
+        console.error('Error reloading obligations:', error)
+      } finally {
+        setIsLoadingObligations(false)
+      }
+    }
+  }
+
   return (
     <div className="min-h-screen bg-gray-50">
       <PageHeader
@@ -483,6 +528,23 @@ export default function EmployerPaymentDashboard({ onBack }: EmployerPaymentDash
           {renderViewContent()}
         </div>
       </main>
+
+      {/* Payment Dialog */}
+      {selectedObligation && (
+        <PaymentDialog
+          isOpen={showPaymentDialog}
+          gigId={selectedObligation.application.gigId}
+          workerId={selectedObligation.application.applicantId}
+          workerName={selectedObligation.workerName}
+          amount={selectedObligation.amount}
+          description={`Payment for ${selectedObligation.gigTitle}`}
+          onSuccess={handlePaymentSuccess}
+          onCancel={() => {
+            setShowPaymentDialog(false)
+            setSelectedObligation(null)
+          }}
+        />
+      )}
     </div>
   )
 }

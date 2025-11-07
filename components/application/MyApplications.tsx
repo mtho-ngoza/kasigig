@@ -5,6 +5,7 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { GigService } from '@/lib/database/gigService'
 import { useAuth } from '@/contexts/AuthContext'
+import { useToast } from '@/contexts/ToastContext'
 import { GigApplication } from '@/types/gig'
 import { QuickMessageButton } from '@/components/messaging/QuickMessageButton'
 import GigAmountDisplay from '@/components/gig/GigAmountDisplay'
@@ -24,6 +25,7 @@ interface ApplicationWithGig extends GigApplication {
 
 export default function MyApplications({ onBack, onBrowseGigs, onMessageConversationStart }: MyApplicationsProps) {
   const { user } = useAuth()
+  const { error: showError } = useToast()
   const [applications, setApplications] = useState<ApplicationWithGig[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -158,7 +160,7 @@ export default function MyApplications({ onBack, onBrowseGigs, onMessageConversa
       setWithdrawConfirmation({ isOpen: false, applicationId: '', gigTitle: '' })
     } catch (error) {
       console.error('Error withdrawing application:', error)
-      alert('Failed to withdraw application. Please try again.')
+      showError('Failed to withdraw application. Please try again.')
     } finally {
       setWithdrawing(false)
     }

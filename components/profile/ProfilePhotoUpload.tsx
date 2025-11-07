@@ -13,7 +13,7 @@ interface ProfilePhotoUploadProps {
 }
 
 export default function ProfilePhotoUpload({ onBack }: ProfilePhotoUploadProps) {
-  const { error: showError } = useToast()
+  const { success, error: showError } = useToast()
   const { user, refreshUser } = useAuth()
   const [isUploading, setIsUploading] = useState(false)
   const [previewUrl, setPreviewUrl] = useState<string | null>(null)
@@ -37,7 +37,7 @@ export default function ProfilePhotoUpload({ onBack }: ProfilePhotoUploadProps) 
 
     // Validate file size (5MB max)
     if (file.size > 5 * 1024 * 1024) {
-      alert('File size must be less than 5MB.')
+      showError('File size must be less than 5MB.')
       return
     }
 
@@ -59,7 +59,7 @@ export default function ProfilePhotoUpload({ onBack }: ProfilePhotoUploadProps) 
       // Refresh user data to get updated profile photo
       await refreshUser()
 
-      alert('Profile photo updated successfully!')
+      success('Profile photo updated successfully!')
       setSelectedFile(null)
       setPreviewUrl(null)
 
