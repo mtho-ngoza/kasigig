@@ -173,7 +173,7 @@ export default function JobSeekerProfileDialog({
               </Card>
 
               {/* Skills & Experience */}
-              {(user.skills && user.skills.length > 0) || user.experience || user.experienceYears || user.equipmentOwnership || user.hourlyRate !== undefined || user.availability && (
+              {((user.skills && user.skills.length > 0) || user.experience || user.experienceYears || user.equipmentOwnership || user.hourlyRate !== undefined || user.availability) && (
                 <Card>
                   <CardHeader>
                     <CardTitle>Skills & Experience</CardTitle>
