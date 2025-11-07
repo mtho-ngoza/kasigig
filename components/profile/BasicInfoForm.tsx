@@ -40,6 +40,7 @@ export default function BasicInfoForm({ onBack }: BasicInfoFormProps) {
     phone: user?.phone || '',
     location: user?.location || '',
     bio: user?.bio || '',
+    workSector: user?.workSector || '',
     socialLinks: {
       linkedin: user?.socialLinks?.linkedin || '',
       website: user?.socialLinks?.website || '',
@@ -80,6 +81,11 @@ export default function BasicInfoForm({ onBack }: BasicInfoFormProps) {
         phone: formData.phone.trim(),
         location: formData.location,
         bio: formData.bio.trim()
+      }
+
+      // Add workSector only for job-seekers
+      if (user.userType === 'job-seeker' && formData.workSector) {
+        updateData.workSector = formData.workSector
       }
 
       // Only add socialLinks if there are any
@@ -206,6 +212,29 @@ export default function BasicInfoForm({ onBack }: BasicInfoFormProps) {
                   </select>
                 </div>
               </div>
+
+              {/* Work Sector - Job Seekers Only */}
+              {user.userType === 'job-seeker' && (
+                <div>
+                  <label htmlFor="workSector" className="block text-sm font-medium text-gray-700 mb-2">
+                    Type of Work *
+                  </label>
+                  <select
+                    id="workSector"
+                    value={formData.workSector}
+                    onChange={(e) => handleInputChange('workSector', e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                    required
+                  >
+                    <option value="">Select your work type</option>
+                    <option value="professional">Professional Services (IT, Design, Marketing, Writing)</option>
+                    <option value="informal">Hands-on Work (Cleaning, Construction, Maintenance, Transport)</option>
+                  </select>
+                  <p className="mt-1 text-sm text-gray-500">
+                    This determines which profile fields are shown to you
+                  </p>
+                </div>
+              )}
 
               {/* Bio */}
               <div>
