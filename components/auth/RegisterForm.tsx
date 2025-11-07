@@ -20,19 +20,19 @@ export function RegisterForm() {
     workSector: undefined,
     idNumber: '',
   })
-  const [errors, setErrors] = useState<Partial<RegisterData>>({})
+  const [errors, setErrors] = useState<Record<string, string>>({})
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target
     setFormData(prev => ({ ...prev, [name]: value }))
-    if (errors[name as keyof RegisterData]) {
+    if (errors[name]) {
       setErrors(prev => ({ ...prev, [name]: '' }))
     }
   }
 
   const validateForm = (): boolean => {
-    const newErrors: Partial<RegisterData> = {}
+    const newErrors: Record<string, string> = {}
 
     if (!formData.firstName) newErrors.firstName = 'First name is required'
     if (!formData.lastName) newErrors.lastName = 'Last name is required'
