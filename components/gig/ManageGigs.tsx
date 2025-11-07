@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
+import { useToast } from '@/contexts/ToastContext'
 import { GigService } from '@/lib/database/gigService'
 import { PaymentService } from '@/lib/services/paymentService'
 import { Gig, GigApplication } from '@/types/gig'
@@ -23,6 +24,7 @@ interface GigWithApplications extends Gig {
 
 export default function ManageGigs({ onBack, onViewGig }: ManageGigsProps) {
   const { user } = useAuth()
+  const { success, error: showError, warning } = useToast()
   const [gigs, setGigs] = useState<GigWithApplications[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -86,7 +88,7 @@ export default function ManageGigs({ onBack, onViewGig }: ManageGigsProps) {
 
   const handleMarkComplete = async (gig: GigWithApplications) => {
     if (!gig.acceptedApplication) {
-      alert('No worker has been assigned to this gig yet. Please accept an application first.')
+      warning('No worker has been assigned to this gig yet. Please accept an application first.')
       return
     }
 
@@ -123,10 +125,10 @@ export default function ManageGigs({ onBack, onViewGig }: ManageGigsProps) {
       setCompletedGig(selectedGig)
       setShowReviewPrompt(true)
 
-      alert('Gig marked as completed! Payment has been released to the worker.')
+      success('Gig marked as completed! Payment has been released to the worker.')
     } catch (err) {
       console.error('Error completing gig:', err)
-      alert('Failed to mark gig as completed. Please try again.')
+      showError('Failed to mark gig as completed. Please try again.')
     } finally {
       setActionLoading(null)
       setSelectedGig(null)
@@ -156,10 +158,10 @@ export default function ManageGigs({ onBack, onViewGig }: ManageGigsProps) {
       })
 
       await fetchGigs()
-      alert('Gig has been cancelled.')
+      success('Gig has been cancelled.')
     } catch (err) {
       console.error('Error cancelling gig:', err)
-      alert('Failed to cancel gig. Please try again.')
+      showError('Failed to cancel gig. Please try again.')
     } finally {
       setActionLoading(null)
     }
@@ -167,7 +169,7 @@ export default function ManageGigs({ onBack, onViewGig }: ManageGigsProps) {
 
   const handleEditGig = (gigId: string) => {
     // TODO: Implement edit functionality
-    alert('Edit functionality coming soon!')
+    warning('Edit functionality coming soon!')
   }
 
   const getStatusBadge = (status: Gig['status']) => {

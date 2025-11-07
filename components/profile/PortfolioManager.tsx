@@ -98,7 +98,7 @@ export default function PortfolioManager({ onBack }: PortfolioManagerProps) {
 
     // Validate file size (5MB max)
     if (file.size > 5 * 1024 * 1024) {
-      alert('File size must be less than 5MB.')
+      showError('File size must be less than 5MB.')
       return
     }
 
@@ -153,11 +153,11 @@ export default function PortfolioManager({ onBack }: PortfolioManagerProps) {
       await ProfileService.updateProfileCompleteness(user.id)
       await refreshUser()
 
-      alert(`Portfolio item ${editingItem ? 'updated' : 'added'} successfully!`)
+      success(`Portfolio item ${editingItem ? 'updated' : 'added'} successfully!`)
       resetForm()
     } catch (err) {
       console.error('Error saving portfolio item:', err)
-      alert(`Failed to ${editingItem ? 'update' : 'add'} portfolio item. Please try again.`)
+      showError(`Failed to ${editingItem ? 'update' : 'add'} portfolio item. Please try again.`)
     } finally {
       setIsSubmitting(false)
       setIsUploading(false)
