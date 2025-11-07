@@ -82,9 +82,18 @@ export default function ExperienceForm({ onBack }: ExperienceFormProps) {
     try {
       const updateData: Record<string, unknown> = {}
 
-      // Only add fields that have values
-      if (formData.experience) {
+      // For professional workers, save experience field
+      // For informal workers, save experienceYears field (not both)
+      if (!isInformal && formData.experience) {
         updateData.experience = formData.experience
+      }
+
+      if (isInformal && formData.experienceYears) {
+        updateData.experienceYears = formData.experienceYears
+      }
+
+      if (isInformal && formData.equipmentOwnership) {
+        updateData.equipmentOwnership = formData.equipmentOwnership
       }
 
       if (formData.availability) {
@@ -101,15 +110,6 @@ export default function ExperienceForm({ onBack }: ExperienceFormProps) {
         if (!isNaN(rate) && rate > 0) {
           updateData.hourlyRate = rate
         }
-      }
-
-      // Include informal worker specific fields
-      if (formData.experienceYears) {
-        updateData.experienceYears = formData.experienceYears
-      }
-
-      if (formData.equipmentOwnership) {
-        updateData.equipmentOwnership = formData.equipmentOwnership
       }
 
       await ProfileService.updateProfile(user.id, updateData)
@@ -148,33 +148,35 @@ export default function ExperienceForm({ onBack }: ExperienceFormProps) {
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-8">
-          {/* Experience Level */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Experience Level</CardTitle>
-              <p className="text-gray-600">How much experience do you have in your field?</p>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                {EXPERIENCE_LEVELS.map(level => (
-                  <label
-                    key={level}
-                    className="flex items-center space-x-3 cursor-pointer p-3 border border-gray-200 rounded-lg hover:bg-gray-50"
-                  >
-                    <input
-                      type="radio"
-                      name="experience"
-                      value={level}
-                      checked={formData.experience === level}
-                      onChange={(e) => handleInputChange('experience', e.target.value)}
-                      className="text-primary-600 focus:ring-primary-500"
-                    />
-                    <span className="text-sm text-gray-900">{level}</span>
-                  </label>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
+          {/* Experience Level - Professional Workers Only */}
+          {!isInformal && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Experience Level</CardTitle>
+                <p className="text-gray-600">How much experience do you have in your field?</p>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  {EXPERIENCE_LEVELS.map(level => (
+                    <label
+                      key={level}
+                      className="flex items-center space-x-3 cursor-pointer p-3 border border-gray-200 rounded-lg hover:bg-gray-50"
+                    >
+                      <input
+                        type="radio"
+                        name="experience"
+                        value={level}
+                        checked={formData.experience === level}
+                        onChange={(e) => handleInputChange('experience', e.target.value)}
+                        className="text-primary-600 focus:ring-primary-500"
+                      />
+                      <span className="text-sm text-gray-900">{level}</span>
+                    </label>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
 
           {/* Hourly Rate */}
           <Card>
