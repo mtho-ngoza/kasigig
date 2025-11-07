@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/Input'
 import { useAuth } from '@/contexts/AuthContext'
 import { ProfileService } from '@/lib/database/profileService'
 import { useToast } from '@/contexts/ToastContext'
+import { isInformalWorker } from '@/lib/utils/userProfile'
 
 interface ExperienceFormProps {
   onBack?: () => void
@@ -39,6 +40,20 @@ const EDUCATION_LEVELS = [
   'Other'
 ]
 
+const EXPERIENCE_YEARS_OPTIONS = [
+  { value: 'less-than-1', label: 'Less than 1 year' },
+  { value: '1-3', label: '1-3 years' },
+  { value: '3-5', label: '3-5 years' },
+  { value: '5-10', label: '5-10 years' },
+  { value: '10-plus', label: '10+ years' }
+]
+
+const EQUIPMENT_OPTIONS = [
+  { value: 'fully-equipped', label: 'Yes, I have all necessary tools' },
+  { value: 'partially-equipped', label: 'I have some tools' },
+  { value: 'no-equipment', label: 'No, I need tools provided' }
+]
+
 export default function ExperienceForm({ onBack }: ExperienceFormProps) {
   const { success, error: showError } = useToast()
   const { user, refreshUser } = useAuth()
@@ -47,10 +62,14 @@ export default function ExperienceForm({ onBack }: ExperienceFormProps) {
     experience: user?.experience || '',
     hourlyRate: user?.hourlyRate?.toString() || '',
     availability: user?.availability || '',
-    education: user?.education || ''
+    education: user?.education || '',
+    experienceYears: user?.experienceYears || '',
+    equipmentOwnership: user?.equipmentOwnership || ''
   })
 
   if (!user) return null
+
+  const isInformal = isInformalWorker(user)
 
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }))
@@ -82,6 +101,15 @@ export default function ExperienceForm({ onBack }: ExperienceFormProps) {
         if (!isNaN(rate) && rate > 0) {
           updateData.hourlyRate = rate
         }
+      }
+
+      // Include informal worker specific fields
+      if (formData.experienceYears) {
+        updateData.experienceYears = formData.experienceYears
+      }
+
+      if (formData.equipmentOwnership) {
+        updateData.equipmentOwnership = formData.equipmentOwnership
       }
 
       await ProfileService.updateProfile(user.id, updateData)
@@ -244,6 +272,71 @@ export default function ExperienceForm({ onBack }: ExperienceFormProps) {
             </CardContent>
           </Card>
 
+          {/* Informal Worker Specific Fields */}
+          {isInformal && (
+            <>
+              {/* Years of Experience */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>Years of Experience</CardTitle>
+                  <p className="text-gray-600">How long have you been doing this type of work?</p>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    {EXPERIENCE_YEARS_OPTIONS.map(option => (
+                      <label
+                        key={option.value}
+                        className="flex items-center space-x-3 cursor-pointer p-3 border border-gray-200 rounded-lg hover:bg-gray-50"
+                      >
+                        <input
+                          type="radio"
+                          name="experienceYears"
+                          value={option.value}
+                          checked={formData.experienceYears === option.value}
+                          onChange={(e) => handleInputChange('experienceYears', e.target.value)}
+                          className="text-primary-600 focus:ring-primary-500"
+                        />
+                        <span className="text-sm text-gray-900">{option.label}</span>
+                      </label>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Equipment/Tools */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>Tools & Equipment</CardTitle>
+                  <p className="text-gray-600">Do you have your own tools or equipment for work?</p>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    {EQUIPMENT_OPTIONS.map(option => (
+                      <label
+                        key={option.value}
+                        className="flex items-center space-x-3 cursor-pointer p-3 border border-gray-200 rounded-lg hover:bg-gray-50"
+                      >
+                        <input
+                          type="radio"
+                          name="equipmentOwnership"
+                          value={option.value}
+                          checked={formData.equipmentOwnership === option.value}
+                          onChange={(e) => handleInputChange('equipmentOwnership', e.target.value)}
+                          className="text-primary-600 focus:ring-primary-500"
+                        />
+                        <span className="text-sm text-gray-900">{option.label}</span>
+                      </label>
+                    ))}
+                  </div>
+                  <div className="mt-4 text-sm text-gray-600 bg-blue-50 p-3 rounded-lg border border-blue-200">
+                    <p className="font-medium text-blue-900 mb-1">💡 Why this helps:</p>
+                    <p className="text-blue-700">Letting clients know about your tools helps them plan better and shows you&apos;re ready to work.</p>
+                  </div>
+                </CardContent>
+              </Card>
+            </>
+          )}
+
           {/* Professional Tips */}
           <Card>
             <CardContent className="p-6">
@@ -255,6 +348,12 @@ export default function ExperienceForm({ onBack }: ExperienceFormProps) {
                   <li>• Consider starting with competitive rates to build your reputation</li>
                   <li>• You can always update your rates as you gain more experience</li>
                   <li>• Clear availability helps clients know when they can work with you</li>
+                  {isInformal && (
+                    <>
+                      <li>• Filling out your experience years helps you apply faster to jobs</li>
+                      <li>• Showing you have tools makes you more attractive to employers</li>
+                    </>
+                  )}
                 </ul>
               </div>
             </CardContent>
