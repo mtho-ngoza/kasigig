@@ -5,9 +5,10 @@ import { useAuth } from '@/contexts/AuthContext'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { LoginCredentials } from '@/types/auth'
+import { GoogleSignInButton } from './GoogleSignInButton'
 
 export function LoginForm() {
-  const { login, isLoading } = useAuth()
+  const { login, loginWithGoogle, isLoading } = useAuth()
   const [formData, setFormData] = useState<LoginCredentials>({
     email: '',
     password: '',
@@ -53,8 +54,28 @@ export function LoginForm() {
     })
   }
 
+  const handleGoogleSignIn = async () => {
+    setMessage(null)
+    const result = await loginWithGoogle()
+    setMessage({
+      type: result.success ? 'success' : 'error',
+      text: result.message
+    })
+  }
+
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
+      <GoogleSignInButton onClick={handleGoogleSignIn} isLoading={isLoading} />
+
+      <div className="relative">
+        <div className="absolute inset-0 flex items-center">
+          <div className="w-full border-t border-gray-300" />
+        </div>
+        <div className="relative flex justify-center text-sm">
+          <span className="px-2 bg-white text-gray-500">Or continue with email</span>
+        </div>
+      </div>
+
       <Input
         label="Email Address"
         type="email"

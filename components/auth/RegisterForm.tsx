@@ -5,9 +5,10 @@ import { useAuth } from '@/contexts/AuthContext'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { RegisterData } from '@/types/auth'
+import { GoogleSignInButton } from './GoogleSignInButton'
 
 export function RegisterForm() {
-  const { register, isLoading } = useAuth()
+  const { register, loginWithGoogle, isLoading } = useAuth()
   const [formData, setFormData] = useState<RegisterData>({
     firstName: '',
     lastName: '',
@@ -137,8 +138,28 @@ export function RegisterForm() {
     })
   }
 
+  const handleGoogleSignIn = async () => {
+    setMessage(null)
+    const result = await loginWithGoogle()
+    setMessage({
+      type: result.success ? 'success' : 'error',
+      text: result.message
+    })
+  }
+
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
+      <GoogleSignInButton onClick={handleGoogleSignIn} isLoading={isLoading} />
+
+      <div className="relative">
+        <div className="absolute inset-0 flex items-center">
+          <div className="w-full border-t border-gray-300" />
+        </div>
+        <div className="relative flex justify-center text-sm">
+          <span className="px-2 bg-white text-gray-500">Or register with email</span>
+        </div>
+      </div>
+
       <div className="grid grid-cols-2 gap-4">
         <Input
           label="First Name"

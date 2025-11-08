@@ -39,6 +39,7 @@ export const mockAuthContextValue: AuthContextType = {
   isLoading: false,
   isAuthenticated: true,
   login: jest.fn(),
+  loginWithGoogle: jest.fn(),
   register: jest.fn(),
   logout: jest.fn(),
   updateUser: jest.fn(),

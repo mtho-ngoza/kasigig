@@ -90,6 +90,7 @@ const mockAuthContextValue = {
   isAuthenticated: true,
   error: null,
   login: jest.fn(),
+  loginWithGoogle: jest.fn(),
   register: jest.fn(),
   logout: jest.fn(),
   updateProfile: jest.fn()

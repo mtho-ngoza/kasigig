@@ -194,13 +194,16 @@ describe('RegisterForm', () => {
     it('should disable submit button while loading', () => {
       ;(useAuth as jest.Mock).mockReturnValue({
         register: mockRegister,
+        loginWithGoogle: jest.fn(),
         isLoading: true
       })
 
       render(<RegisterForm />)
 
-      const submitButton = screen.getByRole('button', { name: /Loading/i })
-      expect(submitButton).toBeDisabled()
+      const buttons = screen.getAllByRole('button', { name: /Loading/i })
+      buttons.forEach(button => {
+        expect(button).toBeDisabled()
+      })
     })
   })
 })
