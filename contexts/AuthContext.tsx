@@ -6,6 +6,7 @@ import { FirebaseAuthService } from '@/lib/auth/firebase'
 
 export interface AuthContextType extends AuthState {
   login: (credentials: LoginCredentials) => Promise<{ success: boolean; message: string }>
+  loginWithGoogle: () => Promise<{ success: boolean; message: string; needsProfileCompletion?: boolean }>
   register: (data: RegisterData) => Promise<{ success: boolean; message: string }>
   logout: () => Promise<void>
   updateUser: (userData: Partial<User>) => Promise<void>
@@ -47,6 +48,29 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     } catch (error: any) {
       setIsLoading(false)
       return { success: false, message: error.message || 'An error occurred during login' }
+    }
+  }
+
+  const loginWithGoogle = async (): Promise<{ success: boolean; message: string; needsProfileCompletion?: boolean }> => {
+    setIsLoading(true)
+
+    try {
+      const { user, needsProfileCompletion } = await FirebaseAuthService.signInWithGoogle()
+      setUser(user)
+      setIsLoading(false)
+
+      if (needsProfileCompletion) {
+        return {
+          success: true,
+          message: 'Welcome! Please complete your profile to continue.',
+          needsProfileCompletion: true
+        }
+      }
+
+      return { success: true, message: 'Login successful!', needsProfileCompletion: false }
+    } catch (error: any) {
+      setIsLoading(false)
+      return { success: false, message: error.message || 'An error occurred during Google sign-in' }
     }
   }
 
@@ -110,6 +134,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     isLoading,
     isAuthenticated: !!user,
     login,
+    loginWithGoogle,
     register,
     logout,
     updateUser,

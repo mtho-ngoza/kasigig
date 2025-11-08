@@ -5,9 +5,11 @@ import { useAuth } from '@/contexts/AuthContext'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { RegisterData } from '@/types/auth'
+import { GoogleSignInButton } from './GoogleSignInButton'
+import { ProfileCompletionModal } from './ProfileCompletionModal'
 
 export function RegisterForm() {
-  const { register, isLoading } = useAuth()
+  const { register, loginWithGoogle, isLoading } = useAuth()
   const [formData, setFormData] = useState<RegisterData>({
     firstName: '',
     lastName: '',
@@ -22,6 +24,7 @@ export function RegisterForm() {
   })
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
+  const [showProfileCompletion, setShowProfileCompletion] = useState(false)
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target
@@ -137,8 +140,47 @@ export function RegisterForm() {
     })
   }
 
+  const handleGoogleSignIn = async () => {
+    setMessage(null)
+    const result = await loginWithGoogle()
+
+    if (result.success && result.needsProfileCompletion) {
+      setShowProfileCompletion(true)
+    } else {
+      setMessage({
+        type: result.success ? 'success' : 'error',
+        text: result.message
+      })
+    }
+  }
+
+  const handleProfileComplete = () => {
+    setShowProfileCompletion(false)
+    setMessage({
+      type: 'success',
+      text: 'Welcome to KasiGig!'
+    })
+  }
+
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
+    <>
+      <ProfileCompletionModal
+        isOpen={showProfileCompletion}
+        onComplete={handleProfileComplete}
+      />
+
+      <form onSubmit={handleSubmit} className="space-y-4">
+      <GoogleSignInButton onClick={handleGoogleSignIn} isLoading={isLoading} />
+
+      <div className="relative">
+        <div className="absolute inset-0 flex items-center">
+          <div className="w-full border-t border-gray-300" />
+        </div>
+        <div className="relative flex justify-center text-sm">
+          <span className="px-2 bg-white text-gray-500">Or register with email</span>
+        </div>
+      </div>
+
       <div className="grid grid-cols-2 gap-4">
         <Input
           label="First Name"
@@ -286,5 +328,6 @@ export function RegisterForm() {
         Create Account
       </Button>
     </form>
+    </>
   )
 }

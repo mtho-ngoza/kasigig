@@ -4,7 +4,9 @@ import {
   signOut,
   onAuthStateChanged,
   updateProfile,
-  User as FirebaseUser
+  User as FirebaseUser,
+  GoogleAuthProvider,
+  signInWithPopup
 } from 'firebase/auth';
 import { doc, setDoc, getDoc } from 'firebase/firestore';
 import { FirebaseError } from 'firebase/app';
@@ -106,6 +108,58 @@ export class FirebaseAuthService {
         throw new Error(`Database error: ${firebaseError.message}`);
       } else {
         throw new Error(firebaseError?.message || 'Sign in failed. Please try again.');
+      }
+    }
+  }
+
+  static async signInWithGoogle(): Promise<{ user: User; needsProfileCompletion: boolean }> {
+    try {
+      const provider = new GoogleAuthProvider();
+      provider.setCustomParameters({ prompt: 'select_account' });
+
+      const userCredential = await signInWithPopup(auth, provider);
+      const firebaseUser = userCredential.user;
+
+      const userDoc = await getDoc(doc(db, 'users', firebaseUser.uid));
+
+      if (userDoc.exists()) {
+        const existingUser = userDoc.data() as User;
+        const needsCompletion = !existingUser.phone || !existingUser.location || !existingUser.userType;
+        return { user: existingUser, needsProfileCompletion: needsCompletion };
+      }
+
+      const nameParts = firebaseUser.displayName?.split(' ') || ['', ''];
+      const firstName = nameParts[0] || '';
+      const lastName = nameParts.slice(1).join(' ') || '';
+
+      const newUser: Partial<User> = {
+        id: firebaseUser.uid,
+        email: firebaseUser.email || '',
+        firstName,
+        lastName,
+        phone: '',
+        location: '',
+        userType: 'job-seeker',
+        profilePhoto: firebaseUser.photoURL || undefined,
+        createdAt: new Date(),
+      };
+
+      await setDoc(doc(db, 'users', firebaseUser.uid), newUser);
+
+      return { user: newUser as User, needsProfileCompletion: true };
+    } catch (error: unknown) {
+      const firebaseError = error as FirebaseError;
+
+      if (firebaseError?.code === 'auth/popup-closed-by-user') {
+        throw new Error('Sign-in cancelled. Please try again.');
+      } else if (firebaseError?.code === 'auth/popup-blocked') {
+        throw new Error('Pop-up blocked. Please allow pop-ups for this site.');
+      } else if (firebaseError?.code === 'auth/account-exists-with-different-credential') {
+        throw new Error('An account already exists with this email. Please sign in using your original method.');
+      } else if (firebaseError?.code?.startsWith('auth/')) {
+        throw new Error(`Authentication error: ${firebaseError.message}`);
+      } else {
+        throw new Error(firebaseError?.message || 'Google sign-in failed. Please try again.');
       }
     }
   }

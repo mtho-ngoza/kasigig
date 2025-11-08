@@ -30,6 +30,7 @@ const createMockAuthContext = (user: User | null = null): AuthContextType => ({
   isLoading: false,
   isAuthenticated: !!user,
   login: jest.fn().mockResolvedValue({ success: true, message: 'Success' }),
+  loginWithGoogle: jest.fn().mockResolvedValue({ success: true, message: 'Success' }),
   register: jest.fn().mockResolvedValue({ success: true, message: 'Success' }),
   logout: jest.fn().mockResolvedValue(undefined),
   updateUser: jest.fn().mockResolvedValue(undefined),
