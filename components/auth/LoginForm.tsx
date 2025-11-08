@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { LoginCredentials } from '@/types/auth'
 import { GoogleSignInButton } from './GoogleSignInButton'
+import { ProfileCompletionModal } from './ProfileCompletionModal'
 
 export function LoginForm() {
   const { login, loginWithGoogle, isLoading } = useAuth()
@@ -15,6 +16,7 @@ export function LoginForm() {
   })
   const [errors, setErrors] = useState<Partial<LoginCredentials>>({})
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
+  const [showProfileCompletion, setShowProfileCompletion] = useState(false)
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target
@@ -57,14 +59,33 @@ export function LoginForm() {
   const handleGoogleSignIn = async () => {
     setMessage(null)
     const result = await loginWithGoogle()
+
+    if (result.success && result.needsProfileCompletion) {
+      setShowProfileCompletion(true)
+    } else {
+      setMessage({
+        type: result.success ? 'success' : 'error',
+        text: result.message
+      })
+    }
+  }
+
+  const handleProfileComplete = () => {
+    setShowProfileCompletion(false)
     setMessage({
-      type: result.success ? 'success' : 'error',
-      text: result.message
+      type: 'success',
+      text: 'Welcome to KasiGig!'
     })
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
+    <>
+      <ProfileCompletionModal
+        isOpen={showProfileCompletion}
+        onComplete={handleProfileComplete}
+      />
+
+      <form onSubmit={handleSubmit} className="space-y-6">
       <GoogleSignInButton onClick={handleGoogleSignIn} isLoading={isLoading} />
 
       <div className="relative">
@@ -117,5 +138,6 @@ export function LoginForm() {
         Sign In
       </Button>
     </form>
+    </>
   )
 }
