@@ -440,8 +440,10 @@ service cloud.firestore {
       allow read: if isAuthenticated() &&
                     (request.auth.uid == resource.data.userId || isAdmin());
 
-      // Only system/admin can create trust score history entries
-      allow create: if isAdmin();
+      // Users can create trust score history entries for themselves
+      // System/admin can create for any user
+      allow create: if isAuthenticated() &&
+                      (request.resource.data.userId == request.auth.uid || isAdmin());
 
       // Trust score history is immutable
       allow update: if false;
@@ -630,7 +632,7 @@ service cloud.firestore {
     // ========================================
     // Verification Results Collection
     // ========================================
-    match /verification-results/{resultId} {
+    match /verificationResults/{resultId} {
       // Users can read their own verification results, admins can read all
       allow read: if isAuthenticated() &&
                     (request.auth.uid == resource.data.userId || isAdmin());
@@ -648,7 +650,7 @@ service cloud.firestore {
     // ========================================
     // Verification Documents Collection
     // ========================================
-    match /verification-documents/{documentId} {
+    match /verificationDocuments/{documentId} {
       // Users can read their own verification documents, admins can read all
       allow read: if isAuthenticated() &&
                     (request.auth.uid == resource.data.userId || isAdmin());
@@ -669,7 +671,7 @@ service cloud.firestore {
     // ========================================
     // Emergency Contacts Collection
     // ========================================
-    match /emergency-contacts/{contactId} {
+    match /emergencyContacts/{contactId} {
       // Users can read their own emergency contacts, admins can read all
       allow read: if isAuthenticated() &&
                     (request.auth.uid == resource.data.userId || isAdmin());

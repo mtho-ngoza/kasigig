@@ -223,8 +223,8 @@ export class SimpleIdVerification {
           result.issues.push(`Invalid ID number: ${idValidation.errors.join(', ')}`)
           result.recommendations.push('User must provide a valid SA ID number')
         } else {
-          result.matches.idNumber = true
-          result.confidence += 40
+          // ID number format is valid, but actual match will be verified via OCR
+          // Confidence will be added after OCR verification
         }
 
         // Strict name and ID cross-reference validation
@@ -234,17 +234,15 @@ export class SimpleIdVerification {
           result.issues.push('User profile missing first name or last name')
           result.recommendations.push('Complete user profile with full name before verification')
         } else {
-          // For now, we cannot verify if the name on the document matches the profile
-          // without OCR, so we'll make validation strict on other criteria
-          result.confidence += 20 // Reduced confidence since we can't verify name match
+          // Name verification will be done via OCR
+          // Confidence will be added after OCR verification
         }
 
         // CRITICAL: Cross-reference ID number from profile with document type
         if (document.type === 'sa_id') {
           // The ID number in user profile should match the document being verified
-          // This is the most important cross-reference we can do
-          result.matches.idNumber = true // ID number format was already validated
-          result.confidence += 25
+          // This will be verified via OCR
+          // Confidence will be added after OCR verification
 
           // Additional validation: ensure ID number belongs to expected age/gender ranges
           if (idValidation.age && idValidation.age < 16) {
@@ -266,7 +264,8 @@ export class SimpleIdVerification {
 
       // Document type specific checks
       if (document.type === 'sa_id') {
-        result.confidence += 20 // SA ID is primary verification document
+        // SA ID is primary verification document
+        // Confidence will be added after OCR verification
       }
 
       // Stricter file quality checks
@@ -278,7 +277,7 @@ export class SimpleIdVerification {
         result.issues.push('File size too large (over 15MB)')
         result.recommendations.push('Compress image to under 15MB')
       } else {
-        result.confidence += 10
+        // File size OK - confidence will be added after OCR verification
       }
 
       // Additional suspicious file checks
@@ -315,6 +314,9 @@ export class SimpleIdVerification {
             nameMatchConfidence: 0
           }
 
+          // Base confidence for successful OCR
+          result.confidence += 30 // OCR successfully extracted text
+
           // 1. Verify ID number match
           const idCheck = OCRService.validateIdNumber(ocrResult.extractedData.idNumber, user?.idNumber || '')
           if (!idCheck.match) {
@@ -323,7 +325,7 @@ export class SimpleIdVerification {
             result.confidence -= 30
           } else {
             result.matches.idNumber = true
-            result.confidence += 20
+            result.confidence += 25 // ID number matches
             console.log('✓ ID number verified via OCR')
           }
 
@@ -339,7 +341,7 @@ export class SimpleIdVerification {
             result.matches.name = nameCheck.match
 
             if (nameCheck.match) {
-              result.confidence += 25
+              result.confidence += 30 // Names match
               console.log(`✓ Name verified via OCR (${nameCheck.confidence}% confidence)`)
             } else {
               result.issues.push(...nameCheck.issues)
@@ -349,14 +351,16 @@ export class SimpleIdVerification {
           } else {
             result.issues.push('Could not extract names from document for verification')
             result.recommendations.push('Ensure document image is clear and names are visible')
+            result.confidence -= 15
           }
 
           // 3. Overall OCR confidence check
           if (ocrResult.confidence < 70) {
             result.issues.push(`Document text quality too low (${ocrResult.confidence}% confidence)`)
             result.recommendations.push('Take a clearer photo with better lighting and focus')
+            result.confidence -= 10
           } else {
-            result.confidence += 10
+            result.confidence += 15 // Good OCR quality
           }
 
         } else {
@@ -445,9 +449,9 @@ export class SimpleIdVerification {
       let status: 'verified' | 'rejected' | 'pending' = 'pending'
       let message = ''
 
-      if (verificationResult.isValid && verificationResult.confidence >= 60) {
+      if (verificationResult.isValid && verificationResult.confidence >= 75) {
         status = 'verified'
-        message = 'Document successfully verified automatically'
+        message = 'Document successfully verified automatically via OCR'
 
         // Update user verification status
         const document = await DocumentStorageService.getDocument(documentId)
@@ -466,29 +470,18 @@ export class SimpleIdVerification {
       } else if (verificationResult.issues.some(issue =>
         issue.includes('checksum') ||
         issue.includes('Invalid ID number') ||
-        issue.includes('file size too small')
+        issue.includes('file size too small') ||
+        issue.includes('Could not extract text from document') ||
+        issue.includes('Invalid document format') ||
+        issue.includes('File extension')
       )) {
+        // Reject documents with critical failures
         status = 'rejected'
         message = `Document rejected: ${verificationResult.issues.join(', ')}`
       } else {
-        // For Phase 1, be very lenient - most documents should auto-verify
-        status = 'verified'
-        message = 'Document verified (basic validation passed)'
-
-        // Also trigger verification success for lenient approvals
-        const document = await DocumentStorageService.getDocument(documentId)
-        if (document) {
-          await SecurityService.updateUserVerificationLevel(
-            currentUser.uid,
-            document.verificationLevel
-          )
-          await SecurityService.updateTrustScore(
-            currentUser.uid,
-            'document_verified',
-            10, // Slightly lower score for lenient verification
-            `${document.type} document verified (auto-approved)`
-          )
-        }
+        // Documents that don't meet verification threshold go to manual review
+        status = 'pending'
+        message = `Document pending manual review (confidence: ${verificationResult.confidence}%)`
       }
 
       // Update document status
