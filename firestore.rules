@@ -343,7 +343,31 @@ service cloud.firestore {
     }
 
     // ========================================
-    // Safety Reports Collection
+    // Safety Reports Collection (hyphenated path)
+    // ========================================
+    match /safety-reports/{reportId} {
+      // Reporter, reportee (person being reported), and admin can read reports
+      // This allows users to see reports about themselves for trust score display
+      allow read: if isAuthenticated() &&
+                    (request.auth.uid == resource.data.reporterId ||
+                     request.auth.uid == resource.data.reporteeId ||
+                     isAdmin());
+
+      // Authenticated users can create safety reports
+      allow create: if isAuthenticated() &&
+                      hasRequiredFields(['reporterId', 'reporteeId', 'type', 'description']) &&
+                      request.resource.data.reporterId == request.auth.uid &&
+                      request.resource.data.status == 'pending';
+
+      // Only admins can update safety reports
+      allow update: if isAdmin();
+
+      // Only admins can delete safety reports
+      allow delete: if isAdmin();
+    }
+
+    // ========================================
+    // Safety Reports Collection (camelCase path - legacy support)
     // ========================================
     match /safetyReports/{reportId} {
       // Reporter, reportee (person being reported), and admin can read reports
@@ -416,8 +440,10 @@ service cloud.firestore {
       allow read: if isAuthenticated() &&
                     (request.auth.uid == resource.data.userId || isAdmin());
 
-      // Only system/admin can create trust score history entries
-      allow create: if isAdmin();
+      // Users can create trust score history entries for themselves
+      // System/admin can create for any user
+      allow create: if isAuthenticated() &&
+                      (request.resource.data.userId == request.auth.uid || isAdmin());
 
       // Trust score history is immutable
       allow update: if false;
@@ -606,7 +632,7 @@ service cloud.firestore {
     // ========================================
     // Verification Results Collection
     // ========================================
-    match /verification-results/{resultId} {
+    match /verificationResults/{resultId} {
       // Users can read their own verification results, admins can read all
       allow read: if isAuthenticated() &&
                     (request.auth.uid == resource.data.userId || isAdmin());
@@ -624,7 +650,7 @@ service cloud.firestore {
     // ========================================
     // Verification Documents Collection
     // ========================================
-    match /verification-documents/{documentId} {
+    match /verificationDocuments/{documentId} {
       // Users can read their own verification documents, admins can read all
       allow read: if isAuthenticated() &&
                     (request.auth.uid == resource.data.userId || isAdmin());
@@ -645,7 +671,7 @@ service cloud.firestore {
     // ========================================
     // Emergency Contacts Collection
     // ========================================
-    match /emergency-contacts/{contactId} {
+    match /emergencyContacts/{contactId} {
       // Users can read their own emergency contacts, admins can read all
       allow read: if isAuthenticated() &&
                     (request.auth.uid == resource.data.userId || isAdmin());

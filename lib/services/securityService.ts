@@ -108,7 +108,7 @@ export class SecurityService {
       })
 
       // Record in history
-      const historyDoc = doc(collection(db, 'trust-score-history'))
+      const historyDoc = doc(collection(db, 'trustScoreHistory'))
       await setDoc(historyDoc, {
         id: historyDoc.id,
         userId,
@@ -161,7 +161,7 @@ export class SecurityService {
   // Emergency Contacts Management
   static async addEmergencyContact(userId: string, contact: Omit<EmergencyContact, 'id' | 'createdAt'>): Promise<string> {
     try {
-      const contactDoc = doc(collection(db, 'emergency-contacts'))
+      const contactDoc = doc(collection(db, 'emergencyContacts'))
       const newContact: EmergencyContact = {
         ...contact,
         id: contactDoc.id,
@@ -186,7 +186,7 @@ export class SecurityService {
 
   static async updateEmergencyContact(userId: string, contactId: string, updates: Partial<EmergencyContact>): Promise<void> {
     try {
-      await updateDoc(doc(db, 'emergency-contacts', contactId), {
+      await updateDoc(doc(db, 'emergencyContacts', contactId), {
         ...updates,
         updatedAt: serverTimestamp()
       })
@@ -211,8 +211,8 @@ export class SecurityService {
 
   static async removeEmergencyContact(userId: string, contactId: string): Promise<void> {
     try {
-      // Remove from emergency-contacts collection
-      await updateDoc(doc(db, 'emergency-contacts', contactId), {
+      // Remove from emergencyContacts collection
+      await updateDoc(doc(db, 'emergencyContacts', contactId), {
         deleted: true,
         deletedAt: serverTimestamp()
       })

@@ -30,7 +30,7 @@ export class DocumentStorageService {
   ): string {
     const timestamp = Date.now()
     const sanitizedFileName = fileName.replace(/[^a-zA-Z0-9.-]/g, '_')
-    return `verification-documents/${userId}/${verificationLevel}/${documentType}/${timestamp}_${sanitizedFileName}`
+    return `verificationDocuments/${userId}/${verificationLevel}/${documentType}/${timestamp}_${sanitizedFileName}`
   }
 
   static async uploadDocument(
@@ -76,7 +76,7 @@ export class DocumentStorageService {
         submittedAt: new Date()
       }
 
-      await setDoc(doc(db, 'verification-documents', documentId), {
+      await setDoc(doc(db, 'verificationDocuments', documentId), {
         ...document,
         userId,
         storagePath,
@@ -97,7 +97,7 @@ export class DocumentStorageService {
   ): Promise<VerificationDocument[]> {
     try {
       let q = query(
-        collection(db, 'verification-documents'),
+        collection(db, 'verificationDocuments'),
         where('userId', '==', userId)
       )
 
@@ -123,7 +123,7 @@ export class DocumentStorageService {
 
   static async getDocument(documentId: string): Promise<VerificationDocument | null> {
     try {
-      const docRef = doc(db, 'verification-documents', documentId)
+      const docRef = doc(db, 'verificationDocuments', documentId)
       const docSnap = await getDoc(docRef)
 
       if (!docSnap.exists()) {
@@ -169,7 +169,7 @@ export class DocumentStorageService {
         updateData.reviewedBy = reviewedBy
       }
 
-      await updateDoc(doc(db, 'verification-documents', documentId), updateData)
+      await updateDoc(doc(db, 'verificationDocuments', documentId), updateData)
     } catch (error) {
       console.error('Error updating document status:', error)
       throw new Error('Failed to update document status.')
@@ -183,7 +183,7 @@ export class DocumentStorageService {
         throw new Error('Document not found')
       }
 
-      const docRef = doc(db, 'verification-documents', documentId)
+      const docRef = doc(db, 'verificationDocuments', documentId)
       const docSnap = await getDoc(docRef)
 
       if (docSnap.exists()) {
@@ -255,7 +255,7 @@ export class DocumentStorageService {
         return null
       }
 
-      const docRef = doc(db, 'verification-documents', documentId)
+      const docRef = doc(db, 'verificationDocuments', documentId)
       const docSnap = await getDoc(docRef)
 
       if (docSnap.exists()) {

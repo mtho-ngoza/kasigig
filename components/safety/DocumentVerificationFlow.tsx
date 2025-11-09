@@ -156,19 +156,33 @@ export default function DocumentVerificationFlow({
       // Show results
       const verifiedCount = verificationResults.filter(r => r.status === 'verified').length
       const rejectedCount = verificationResults.filter(r => r.status === 'rejected').length
+      const pendingCount = verificationResults.filter(r => r.status === 'pending').length
 
-      if (allVerified) {
+      if (allVerified && verifiedCount === draftDocuments.length) {
+        // All documents successfully verified
         success(`All documents verified successfully! Your ${verificationLevel} verification is complete. ✓`)
         onComplete()
       } else if (rejectedCount > 0) {
+        // Some documents were rejected
         const rejectedMessages = verificationResults
           .filter(r => r.status === 'rejected')
           .map(r => r.message)
           .join('; ')
         showError(`${rejectedCount} document(s) rejected: ${rejectedMessages}. Please re-upload with valid documents.`)
-      } else {
+      } else if (pendingCount > 0) {
+        // Some documents are pending manual review
+        const pendingMessages = verificationResults
+          .filter(r => r.status === 'pending')
+          .map(r => r.message)
+          .join('; ')
+        showError(`${pendingCount} document(s) require manual review: ${pendingMessages}. Our team will review within 24-48 hours.`)
+      } else if (verifiedCount > 0) {
+        // Some verified, some might have issues
         success(`${verifiedCount} document(s) verified. Review process complete.`)
         onComplete()
+      } else {
+        // Nothing was verified
+        showError('No documents were verified. Please ensure your documents are clear and readable.')
       }
     } catch (error) {
       console.error('Error submitting for review:', error)

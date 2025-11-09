@@ -14,111 +14,59 @@ export interface OCRResult {
 
 export class OCRService {
   /**
-   * Extract text from document using Google Vision API
+   * Extract text from document using Google Vision API via server-side API route
    * Cost: ~$0.015 per document (very affordable for verification)
    */
   static async extractDocumentText(imageUrl: string): Promise<OCRResult> {
     try {
-      // Check if Google Vision API is configured
-      if (!process.env.GOOGLE_CLOUD_API_KEY && !process.env.GOOGLE_APPLICATION_CREDENTIALS) {
-        console.warn('Google Vision API not configured, using fallback method')
-        return this.extractWithFallback(imageUrl)
-      }
+      console.log('Starting OCR extraction via Google Vision API...')
 
-      // Use Google Vision API (when configured)
-      const response = await fetch(`https://vision.googleapis.com/v1/images:annotate?key=${process.env.GOOGLE_CLOUD_API_KEY}`, {
+      // Call server-side API route for secure OCR processing
+      const response = await fetch('/api/ocr/extract', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          requests: [{
-            image: {
-              source: {
-                imageUri: imageUrl
-              }
-            },
-            features: [{
-              type: 'TEXT_DETECTION',
-              maxResults: 10
-            }]
-          }]
-        })
+        body: JSON.stringify({ imageUrl })
       })
 
       if (!response.ok) {
-        throw new Error(`Google Vision API error: ${response.statusText}`)
+        throw new Error(`OCR API error: ${response.statusText}`)
       }
 
       const data = await response.json()
 
-      if (data.responses?.[0]?.error) {
-        throw new Error(`Vision API error: ${data.responses[0].error.message}`)
-      }
-
-      const textAnnotations = data.responses?.[0]?.textAnnotations
-      if (!textAnnotations || textAnnotations.length === 0) {
+      // If Vision API failed or returned no results
+      if (!data.success) {
+        console.error('Vision API failed:', data.error)
         return {
           success: false,
           extractedText: '',
           confidence: 0,
-          error: 'No text detected in document'
+          error: data.error || 'Failed to extract text from document'
         }
       }
 
-      // First annotation contains all detected text
-      const fullText = textAnnotations[0].description || ''
-      const confidence = textAnnotations[0].confidence || 0.8
-
       // Parse the extracted text for SA ID specific data
-      const extractedData = this.parseSAIdText(fullText)
+      const extractedData = this.parseSAIdText(data.extractedText)
+
+      console.log('✅ OCR Success! Extracted', data.extractedText, 'characters')
 
       return {
         success: true,
-        extractedText: fullText,
-        confidence: Math.round(confidence * 100),
+        extractedText: data.extractedText,
+        confidence: data.confidence,
         extractedData
       }
 
     } catch (error) {
       console.error('OCR extraction failed:', error)
-
-      // Fallback to pattern-based extraction if API fails
-      return this.extractWithFallback(imageUrl)
-    }
-  }
-
-  /**
-   * Fallback method when OCR API is not available
-   * Uses basic heuristics (for development/testing)
-   */
-  private static async extractWithFallback(imageUrl: string): Promise<OCRResult> {
-    // For development - simulate OCR extraction
-    // In production, you'd want to implement a backup OCR service
-
-    console.log('Using OCR fallback method for:', imageUrl)
-
-    // Simulate successful extraction with placeholder text
-    // This would need to be replaced with actual OCR in production
-    const simulatedText = `
-      REPUBLIC OF SOUTH AFRICA
-      IDENTITY DOCUMENT
-      ID: 9001015001083
-      SURNAME: SMITH
-      NAMES: JOHN DAVID
-      Date of Birth: 01 JAN 1990
-      Gender: M
-      Status: CITIZEN
-    `
-
-    const extractedData = this.parseSAIdText(simulatedText)
-
-    return {
-      success: true,
-      extractedText: simulatedText.trim(),
-      confidence: 75, // Lower confidence for fallback
-      extractedData,
-      error: 'Using fallback OCR - configure Google Vision API for production'
+      return {
+        success: false,
+        extractedText: '',
+        confidence: 0,
+        error: error instanceof Error ? error.message : 'OCR processing failed'
+      }
     }
   }
 
@@ -135,17 +83,25 @@ export class OCRService {
     }
 
     // Extract names (look for common SA ID patterns)
-    const surnameMatch = text.match(/(?:SURNAME|FAMILYNAME)[\s:]+([A-Z\s]+)/i)
-    const namesMatch = text.match(/(?:NAMES?|GIVEN\s*NAMES?)[\s:]+([A-Z\s]+)/i)
+    // Match everything up to newline or end, excluding newlines from capture
+    // Use word boundaries to avoid matching "NAME" within "SURNAME"
+    const surnameMatch = text.match(/\b(?:SURNAME|FAMILYNAME)[\s:]+([^\n\r]+)/i)
+    const namesMatch = text.match(/\b(?:NAMES?|GIVEN\s*NAMES?)[\s:]+([^\n\r]+)/i)
 
     const names = []
     if (surnameMatch) {
-      const surname = surnameMatch[1].trim()
-      names.push(surname)
+      // Clean up newlines and extra whitespace
+      const surname = surnameMatch[1].trim().replace(/[\n\r]+/g, ' ').replace(/\s+/g, ' ')
+      if (surname && surname.length > 1) {
+        names.push(surname)
+      }
     }
     if (namesMatch) {
-      const givenNames = namesMatch[1].trim()
-      names.push(givenNames)
+      // Clean up newlines and extra whitespace
+      const givenNames = namesMatch[1].trim().replace(/[\n\r]+/g, ' ').replace(/\s+/g, ' ')
+      if (givenNames && givenNames.length > 1) {
+        names.push(givenNames)
+      }
     }
 
     // Also look for standalone name patterns
