@@ -17,6 +17,17 @@ export const metadata: Metadata = {
   title: 'KasiGig - Empowering South Africa\'s Informal Sector',
   description: 'Secure, inclusive gig opportunities for all South Africans. From kasi to career - find work, build skills, earn income.',
   manifest: '/manifest.json',
+  icons: {
+    icon: [
+      { url: '/icons/icon-192x192.png', sizes: '192x192', type: 'image/png' },
+      { url: '/icons/icon-512x512.png', sizes: '512x512', type: 'image/png' }
+    ],
+    shortcut: '/icons/icon-192x192.png',
+    apple: [
+      { url: '/icons/icon-152x152.png', sizes: '152x152', type: 'image/png' },
+      { url: '/icons/icon-192x192.png', sizes: '192x192', type: 'image/png' }
+    ]
+  },
   appleWebApp: {
     capable: true,
     statusBarStyle: 'default',

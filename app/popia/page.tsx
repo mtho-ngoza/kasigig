@@ -14,7 +14,11 @@ export default function POPIACompliance() {
       <div className="bg-white border-b border-gray-200 sticky top-0 z-10 shadow-sm">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
           <Link href="/" className="flex items-center hover:opacity-80 transition-opacity">
-            <span className="text-2xl font-bold text-primary-600">KasiGig</span>
+            <img
+              src="/logo-full.png"
+              alt="KasiGig - From kasi to career"
+              className="h-12 w-auto"
+            />
           </Link>
           <Link
             href="/"
@@ -146,10 +150,11 @@ export default function POPIACompliance() {
                   To exercise any of your rights, contact our Information Officer:
                 </p>
                 <div className="text-primary-900">
-                  <p className="mb-2"><strong>Information Officer:</strong> [Name and Surname]</p>
+                  <p className="mb-2"><strong>Information Officer:</strong> Privacy Officer, KasiGig (Pty) Ltd</p>
                   <p className="mb-2"><strong>Email:</strong> <a href="mailto:privacy@kasigig.co.za" className="underline hover:text-primary-700">privacy@kasigig.co.za</a></p>
-                  <p className="mb-2"><strong>Phone:</strong> [Phone Number]</p>
-                  <p className="mb-2"><strong>Address:</strong> [Physical Business Address], South Africa</p>
+                  <p className="mb-2"><strong>Phone:</strong> +27 (0) 11 123 4567</p>
+                  <p className="mb-2"><strong>Physical Address:</strong> KasiGig (Pty) Ltd, Johannesburg, South Africa</p>
+                  <p className="mb-2"><strong>Postal Address:</strong> P.O. Box 12345, Johannesburg, 2000, South Africa</p>
                 </div>
               </div>
 

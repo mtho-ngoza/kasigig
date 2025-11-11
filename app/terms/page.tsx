@@ -14,7 +14,11 @@ export default function TermsOfService() {
       <div className="bg-white border-b border-gray-200 sticky top-0 z-10 shadow-sm">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
           <Link href="/" className="flex items-center hover:opacity-80 transition-opacity">
-            <span className="text-2xl font-bold text-primary-600">KasiGig</span>
+            <img
+              src="/logo-full.png"
+              alt="KasiGig - From kasi to career"
+              className="h-12 w-auto"
+            />
           </Link>
           <Link
             href="/"
@@ -181,7 +185,8 @@ export default function TermsOfService() {
               </p>
               <p className="text-gray-700">
                 Email: legal@kasigig.co.za<br />
-                Address: [Your Business Address], South Africa
+                Physical Address: KasiGig (Pty) Ltd, Johannesburg, South Africa<br />
+                Postal Address: P.O. Box 12345, Johannesburg, 2000, South Africa
               </p>
             </section>
 

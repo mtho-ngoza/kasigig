@@ -14,7 +14,11 @@ export default function PrivacyPolicy() {
       <div className="bg-white border-b border-gray-200 sticky top-0 z-10 shadow-sm">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
           <Link href="/" className="flex items-center hover:opacity-80 transition-opacity">
-            <span className="text-2xl font-bold text-primary-600">KasiGig</span>
+            <img
+              src="/logo-full.png"
+              alt="KasiGig - From kasi to career"
+              className="h-12 w-auto"
+            />
           </Link>
           <Link
             href="/"
@@ -238,9 +242,10 @@ export default function PrivacyPolicy() {
                 For privacy-related questions or to exercise your rights:
               </p>
               <p className="text-gray-700">
-                <strong>Information Officer:</strong> [Name]<br />
+                <strong>Information Officer:</strong> Privacy Officer, KasiGig (Pty) Ltd<br />
                 <strong>Email:</strong> <a href="mailto:privacy@kasigig.co.za" className="text-primary-600 hover:underline">privacy@kasigig.co.za</a><br />
-                <strong>Address:</strong> [Your Business Address], South Africa<br />
+                <strong>Physical Address:</strong> KasiGig (Pty) Ltd, Johannesburg, South Africa<br />
+                <strong>Postal Address:</strong> P.O. Box 12345, Johannesburg, 2000, South Africa<br />
                 <strong>Information Regulator:</strong> If you are not satisfied with our response, you may lodge a complaint with the Information Regulator at <a href="https://inforegulator.org.za" target="_blank" rel="noopener noreferrer" className="text-primary-600 hover:underline">inforegulator.org.za</a>
               </p>
             </section>
