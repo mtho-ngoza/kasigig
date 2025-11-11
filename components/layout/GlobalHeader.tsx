@@ -54,7 +54,7 @@ export function GlobalHeader({
             <div className="flex items-center space-x-6">
               <div className="flex items-center cursor-pointer" onClick={() => onNavigate?.('browse')}>
                 <img
-                  src="/logo-full.svg"
+                  src="/logo-full.png"
                   alt="KasiGig - From kasi to career"
                   className="h-10 w-auto"
                 />

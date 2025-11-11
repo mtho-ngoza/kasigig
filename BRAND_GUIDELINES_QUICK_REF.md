@@ -333,7 +333,9 @@ Example: kasigig_flyer_launch_v1.pdf
 ## Contact & Resources
 
 **Full Branding Document:** `/BRANDING_AND_MARKETING.md`
-**Logo Files:** `/public/` (when created)
+**Logo Specifications:** `/docs/branding/LOGO_SPECIFICATIONS.md`
+**Theme Implementation:** `/docs/branding/THEME_REBRAND_SUMMARY.md`
+**Logo Files:** `/public/logo-*.svg`
 **Design Assets:** `/assets/brand/` (when created)
 
 **Need Help?**
