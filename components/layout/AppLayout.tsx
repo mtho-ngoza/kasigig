@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useState, useEffect } from 'react'
-import { usePathname } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
 import { useAuth } from '@/contexts/AuthContext'
 import { GlobalHeader } from './GlobalHeader'
 import { PageHeader } from './PageHeader'
@@ -19,18 +19,47 @@ interface AppLayoutProps {
 
 export function AppLayout({ children }: AppLayoutProps) {
   const pathname = usePathname()
+  const router = useRouter()
   const { user, isLoading } = useAuth()
   const [currentView, setCurrentView] = useState<PageView>('browse')
   const [messageConversationId, setMessageConversationId] = useState<string | undefined>(undefined)
   const [showPostGig, setShowPostGig] = useState(false)
+
+  // Map URL paths to page views
+  const pathToView: Record<string, PageView> = {
+    '/': 'browse',
+    '/auth': 'auth',
+    '/dashboard': 'dashboard',
+    '/profile': 'profile',
+    '/post-gig': 'post-gig',
+    '/messages': 'messages'
+  }
+
+  const viewToPath: Record<PageView, string> = {
+    'browse': '/',
+    'auth': '/auth',
+    'dashboard': '/dashboard',
+    'profile': '/profile',
+    'post-gig': '/post-gig',
+    'messages': '/messages'
+  }
+
+  // Initialize view from URL on mount
+  useEffect(() => {
+    const view = pathToView[pathname]
+    if (view && view !== currentView) {
+      setCurrentView(view)
+    }
+  }, [pathname]) // Only run when pathname changes
 
   // Handle authentication state changes
   useEffect(() => {
     if (user && currentView === 'auth') {
       // Redirect to dashboard after successful authentication
       setCurrentView('dashboard')
+      router.push('/dashboard')
     }
-  }, [user, currentView])
+  }, [user, currentView, router])
 
   if (isLoading) {
     return (
@@ -51,6 +80,11 @@ export function AppLayout({ children }: AppLayoutProps) {
 
   const handleNavigation = (page: PageView) => {
     setCurrentView(page)
+    // Update URL to match the navigation
+    const newPath = viewToPath[page]
+    if (newPath && pathname !== newPath) {
+      router.push(newPath)
+    }
     if (page !== 'messages') {
       setMessageConversationId(undefined)
     }
@@ -62,11 +96,13 @@ export function AppLayout({ children }: AppLayoutProps) {
   const handleShowPostGig = () => {
     setShowPostGig(true)
     setCurrentView('post-gig')
+    router.push('/post-gig')
   }
 
   const handleMessageConversationStart = (conversationId: string) => {
     setMessageConversationId(conversationId)
     setCurrentView('messages')
+    router.push('/messages')
   }
 
   // Determine current page for header highlighting
@@ -82,7 +118,7 @@ export function AppLayout({ children }: AppLayoutProps) {
     const breadcrumbs: Array<{label: string; onClick?: () => void; isCurrentPage?: boolean}> = [
       {
         label: 'Home',
-        onClick: () => setCurrentView('browse')
+        onClick: () => handleNavigation('browse')
       }
     ]
 
@@ -97,7 +133,7 @@ export function AppLayout({ children }: AppLayoutProps) {
         breadcrumbs.push(
           {
             label: 'Dashboard',
-            onClick: () => setCurrentView('dashboard')
+            onClick: () => handleNavigation('dashboard')
           },
           {
             label: 'Profile & Settings',
@@ -109,7 +145,7 @@ export function AppLayout({ children }: AppLayoutProps) {
         breadcrumbs.push(
           {
             label: 'Dashboard',
-            onClick: () => setCurrentView('dashboard')
+            onClick: () => handleNavigation('dashboard')
           },
           {
             label: 'Post New Gig',
@@ -121,7 +157,7 @@ export function AppLayout({ children }: AppLayoutProps) {
         breadcrumbs.push(
           {
             label: 'Dashboard',
-            onClick: () => setCurrentView('dashboard')
+            onClick: () => handleNavigation('dashboard')
           },
           {
             label: 'Messages',
@@ -138,7 +174,7 @@ export function AppLayout({ children }: AppLayoutProps) {
   if (currentView === 'auth') {
     return (
       <AuthPage
-        onBackClick={() => setCurrentView('browse')}
+        onBackClick={() => handleNavigation('browse')}
       />
     )
   }
@@ -155,7 +191,7 @@ export function AppLayout({ children }: AppLayoutProps) {
         />
         <PostGigPage onBack={() => {
           setShowPostGig(false)
-          setCurrentView('dashboard')
+          handleNavigation('dashboard')
         }} />
       </>
     )
@@ -176,7 +212,7 @@ export function AppLayout({ children }: AppLayoutProps) {
             case 'messages':
               return (
                 <Dashboard
-                  onBrowseGigs={() => setCurrentView('browse')}
+                  onBrowseGigs={() => handleNavigation('browse')}
                   initialMessageConversationId={messageConversationId}
                   onMessageConversationStart={handleMessageConversationStart}
                 />
@@ -191,7 +227,7 @@ export function AppLayout({ children }: AppLayoutProps) {
                     breadcrumbs={getBreadcrumbs()}
                     backButton={{
                       label: 'Back to Dashboard',
-                      onClick: () => setCurrentView('dashboard')
+                      onClick: () => handleNavigation('dashboard')
                     }}
                   />
                   <div className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
@@ -206,13 +242,13 @@ export function AppLayout({ children }: AppLayoutProps) {
             default:
               return (
                 <PublicGigBrowser
-                  onSignUpClick={() => setCurrentView('auth')}
-                  onLoginClick={() => setCurrentView('auth')}
+                  onSignUpClick={() => handleNavigation('auth')}
+                  onLoginClick={() => handleNavigation('auth')}
                   showAuthButtons={!user}
-                  onDashboardClick={user ? () => setCurrentView('dashboard') : undefined}
+                  onDashboardClick={user ? () => handleNavigation('dashboard') : undefined}
                   currentUser={user}
                   onMessageConversationStart={handleMessageConversationStart}
-                  onMessagesClick={user ? () => setCurrentView('messages') : undefined}
+                  onMessagesClick={user ? () => handleNavigation('messages') : undefined}
                 />
               )
           }
