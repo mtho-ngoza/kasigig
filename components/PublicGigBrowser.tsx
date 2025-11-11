@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import { GigService } from '@/lib/database/gigService'
 import { Gig } from '@/types/gig'
 import { User } from '@/types/auth'
@@ -13,6 +13,29 @@ import { useLocation } from '@/contexts/LocationContext'
 import { calculateDistance, formatDistance } from '@/lib/utils/locationUtils'
 import GigAmountDisplay from '@/components/gig/GigAmountDisplay'
 import { Footer } from '@/components/layout/Footer'
+
+// Custom hook for scroll-triggered animations
+function useInView(options = {}) {
+  const ref = useRef<HTMLDivElement>(null)
+  const [isInView, setIsInView] = useState(false)
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(([entry]) => {
+      if (entry.isIntersecting) {
+        setIsInView(true)
+        observer.disconnect()
+      }
+    }, { threshold: 0.1, ...options })
+
+    if (ref.current) {
+      observer.observe(ref.current)
+    }
+
+    return () => observer.disconnect()
+  }, [])
+
+  return { ref, isInView }
+}
 
 interface PublicGigBrowserProps {
   onSignUpClick: () => void
@@ -49,6 +72,16 @@ export default function PublicGigBrowser({
   const [radiusKm, setRadiusKm] = useState(25)
   const [applicationCounts, setApplicationCounts] = useState<Record<string, number>>({})
   const [userAppliedGigs, setUserAppliedGigs] = useState<Set<string>>(new Set())
+  const [heroAnimated, setHeroAnimated] = useState(false)
+
+  // Scroll-triggered animations
+  const { ref: featuresRef, isInView: featuresInView } = useInView()
+
+  // Trigger hero animations on mount
+  useEffect(() => {
+    const timer = setTimeout(() => setHeroAnimated(true), 100)
+    return () => clearTimeout(timer)
+  }, [])
 
   const categories = [
     'Technology',
@@ -406,15 +439,15 @@ export default function PublicGigBrowser({
     <div className="min-h-screen bg-gray-50">
 
       {/* Hero Section */}
-      <section className="bg-gradient-to-br from-primary-600 via-primary-600 to-primary-700 text-white py-20">
+      <section className="bg-gradient-to-br from-primary-600 via-primary-600 to-primary-700 text-white py-20 overflow-hidden">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h2 className="text-5xl md:text-6xl font-bold mb-6 leading-tight">
+          <h2 className={`text-5xl md:text-6xl font-bold mb-6 leading-tight transition-all duration-700 ${heroAnimated ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-4'}`}>
             From Kasi to Career 🇿🇦
           </h2>
-          <p className="text-2xl md:text-3xl mb-4 max-w-4xl mx-auto font-light">
+          <p className={`text-2xl md:text-3xl mb-4 max-w-4xl mx-auto font-light transition-all duration-700 delay-100 ${heroAnimated ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-4'}`}>
             South Africa&apos;s first gig platform built for informal sector workers
           </p>
-          <p className="text-lg mb-10 opacity-95 flex items-center justify-center gap-6 flex-wrap max-w-3xl mx-auto">
+          <p className={`text-lg mb-10 opacity-95 flex items-center justify-center gap-6 flex-wrap max-w-3xl mx-auto transition-all duration-700 delay-200 ${heroAnimated ? 'opacity-95 translate-y-0' : 'opacity-0 -translate-y-4'}`}>
             <span className="flex items-center gap-2">
               <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
                 <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
@@ -436,7 +469,7 @@ export default function PublicGigBrowser({
           </p>
 
           {/* Search Section */}
-          <div className="max-w-4xl mx-auto bg-white rounded-lg p-6 shadow-lg">
+          <div className={`max-w-4xl mx-auto bg-white rounded-lg p-6 shadow-lg transition-all duration-700 delay-300 ${heroAnimated ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
               <div className="md:col-span-2">
                 <input
@@ -471,21 +504,21 @@ export default function PublicGigBrowser({
       </section>
 
       {/* Feature Highlights */}
-      <section className="bg-white py-16 border-b">
+      <section ref={featuresRef} className="bg-white py-16 border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid md:grid-cols-3 gap-8">
-            <div className="text-center p-6 rounded-lg hover:bg-gray-50 transition-colors">
-              <div className="text-5xl mb-4">🛡️</div>
+            <div className={`text-center p-6 rounded-lg hover:bg-gray-50 hover:shadow-md hover:scale-105 transition-all duration-300 ${featuresInView ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`} style={{ transitionDelay: featuresInView ? '0ms' : '0ms' }}>
+              <div className="text-5xl mb-4 transform transition-transform duration-300 hover:scale-110">🛡️</div>
               <h3 className="text-xl font-bold text-gray-900 mb-3">ID Verified Employers</h3>
               <p className="text-gray-600">All employers verified with SA ID documents. Your safety is our priority.</p>
             </div>
-            <div className="text-center p-6 rounded-lg hover:bg-gray-50 transition-colors">
-              <div className="text-5xl mb-4">💰</div>
+            <div className={`text-center p-6 rounded-lg hover:bg-gray-50 hover:shadow-md hover:scale-105 transition-all duration-300 ${featuresInView ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`} style={{ transitionDelay: featuresInView ? '100ms' : '0ms' }}>
+              <div className="text-5xl mb-4 transform transition-transform duration-300 hover:scale-110">💰</div>
               <h3 className="text-xl font-bold text-gray-900 mb-3">Payment Protected</h3>
               <p className="text-gray-600">Escrow system holds payment until work is complete. Get paid what you earned.</p>
             </div>
-            <div className="text-center p-6 rounded-lg hover:bg-gray-50 transition-colors">
-              <div className="text-5xl mb-4">⭐</div>
+            <div className={`text-center p-6 rounded-lg hover:bg-gray-50 hover:shadow-md hover:scale-105 transition-all duration-300 ${featuresInView ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`} style={{ transitionDelay: featuresInView ? '200ms' : '0ms' }}>
+              <div className="text-5xl mb-4 transform transition-transform duration-300 hover:scale-110">⭐</div>
               <h3 className="text-xl font-bold text-gray-900 mb-3">Build Your Profile</h3>
               <p className="text-gray-600">Earn trust scores, get verified, and grow your career opportunities.</p>
             </div>
