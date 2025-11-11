@@ -204,6 +204,10 @@ export function AppLayout({ children }: AppLayoutProps) {
           onNavigate={handleNavigation}
           onShowPostGig={handleShowPostGig}
           showAuthButtons={!user}
+          onNavigateToDashboardView={(view: string) => {
+            const path = view === 'dashboard' ? '/dashboard' : `/dashboard/${view}`
+            router.push(path)
+          }}
         />
         <PostGigPage onBack={() => {
           setShowPostGig(false)
@@ -220,6 +224,10 @@ export function AppLayout({ children }: AppLayoutProps) {
         onNavigate={handleNavigation}
         onShowPostGig={handleShowPostGig}
         showAuthButtons={!user}
+        onNavigateToDashboardView={(view: string) => {
+          const path = view === 'dashboard' ? '/dashboard' : `/dashboard/${view}`
+          router.push(path)
+        }}
       />
       <main className="min-h-screen bg-gray-50">
         {(() => {
