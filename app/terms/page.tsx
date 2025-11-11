@@ -1,6 +1,5 @@
 import { Metadata } from 'next'
 import Link from 'next/link'
-import { Footer } from '@/components/layout/Footer'
 
 export const metadata: Metadata = {
   title: 'Terms of Service - KasiGig',
@@ -198,8 +197,6 @@ export default function TermsOfService() {
         </div>
       </div>
       </div>
-
-      <Footer />
     </div>
   )
 }
