@@ -1,9 +1,9 @@
 /**
  * Web Vitals tracking for performance monitoring
- * Tracks CLS, LCP, FID, FCP, and TTFB metrics
+ * Tracks CLS, LCP, INP, FCP, and TTFB metrics
  */
 
-import { onCLS, onFID, onLCP, onFCP, onTTFB, Metric } from 'web-vitals';
+import { onCLS, onINP, onLCP, onFCP, onTTFB, Metric } from 'web-vitals';
 
 interface VitalsReport {
   name: string;
@@ -16,7 +16,7 @@ interface VitalsReport {
 // Performance thresholds (in milliseconds)
 const THRESHOLDS = {
   CLS: { good: 0.1, poor: 0.25 },
-  FID: { good: 100, poor: 300 },
+  INP: { good: 200, poor: 500 },  // Replaced FID with INP
   LCP: { good: 2500, poor: 4000 },
   FCP: { good: 1800, poor: 3000 },
   TTFB: { good: 800, poor: 1800 }
@@ -67,7 +67,7 @@ export function initWebVitals(): void {
   try {
     // Core Web Vitals
     onCLS(reportVital);   // Cumulative Layout Shift
-    onFID(reportVital);   // First Input Delay
+    onINP(reportVital);   // Interaction to Next Paint (replaces FID)
     onLCP(reportVital);   // Largest Contentful Paint
 
     // Additional metrics
