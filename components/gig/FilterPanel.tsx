@@ -4,6 +4,7 @@ import React from 'react'
 import { GigFilterOptions, BUDGET_RANGES, DURATION_OPTIONS } from '@/types/filters'
 import { SkillsFilter } from './SkillsFilter'
 import { FilterPresets } from './FilterPresets'
+import { User } from '@/types/auth'
 
 interface FilterPanelProps {
   filters: GigFilterOptions
@@ -12,6 +13,7 @@ interface FilterPanelProps {
   resultCount?: number
   isOpen?: boolean
   onClose?: () => void
+  currentUser?: User | null
 }
 
 export function FilterPanel({
@@ -20,7 +22,8 @@ export function FilterPanel({
   onClearFilters,
   resultCount,
   isOpen = true,
-  onClose
+  onClose,
+  currentUser
 }: FilterPanelProps) {
   const hasActiveFilters =
     filters.budgetMin !== undefined ||
@@ -241,6 +244,7 @@ export function FilterPanel({
         <SkillsFilter
           selectedSkills={filters.skills}
           onSkillsChange={(skills) => onFiltersChange({ skills })}
+          currentUser={currentUser}
         />
       </div>
     </div>

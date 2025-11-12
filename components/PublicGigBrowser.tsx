@@ -809,6 +809,7 @@ export default function PublicGigBrowser({
               onFiltersChange={handleFiltersChange}
               onClearFilters={handleClearFilters}
               resultCount={filteredAndSortedGigs.length}
+              currentUser={currentUser}
             />
           </div>
 
@@ -843,6 +844,7 @@ export default function PublicGigBrowser({
                   resultCount={filteredAndSortedGigs.length}
                   isOpen={showFilterPanel}
                   onClose={() => setShowFilterPanel(false)}
+                  currentUser={currentUser}
                 />
               </div>
             )}
