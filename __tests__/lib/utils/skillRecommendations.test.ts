@@ -63,6 +63,16 @@ describe('skillRecommendations', () => {
       expect(result).not.toContain('Construction')
     })
 
+    it('should recommend related skills for cleaning worker', () => {
+      const userSkills = ['Cleaning']
+      const result = getRecommendedSkills(userSkills, availableSkills)
+
+      expect(result).toContain('Construction')
+      expect(result).toContain('Transportation')
+      expect(result).toContain('Customer Service')
+      expect(result).not.toContain('Cleaning') // Don't recommend what they already have
+    })
+
     it('should not recommend skills user already has', () => {
       const userSkills = ['React', 'JavaScript', 'TypeScript']
       const result = getRecommendedSkills(userSkills, availableSkills)
