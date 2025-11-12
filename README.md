@@ -4,7 +4,7 @@ A modern, responsive web platform designed to empower South Africa's informal se
 
 **From kasi to career** - we're bridging the gap between South Africa's 11.2 million unemployed and the R750B informal sector economy.
 
-[![Tests](https://img.shields.io/badge/tests-674%20passing-brightgreen)](.)
+[![Tests](https://img.shields.io/badge/tests-935%20passing-brightgreen)](.)
 [![TypeScript](https://img.shields.io/badge/TypeScript-100%25-blue)](.)
 [![Build](https://img.shields.io/badge/build-passing-brightgreen)](.)
 
@@ -23,10 +23,10 @@ Empower all South Africans - from informal sector workers to professionals - by 
 
 ## ✅ Platform Status: Production Ready
 
-**Readiness**: 🟢 **95% Complete**
+**Readiness**: 🟢 **96% Complete**
 
 ### What's Implemented
-- ✅ **674 tests passing** | ✅ Zero TypeScript errors | ✅ Build successful
+- ✅ **935 tests passing** | ✅ Zero TypeScript errors | ✅ Build successful
 - ✅ **All core features implemented and tested**
 - ✅ **Payment system fully functional** (escrow, withdrawals, fees)
 - ✅ **Trust & safety features operational** (ID verification, reviews, trust scores)
@@ -66,6 +66,29 @@ Empower all South Africans - from informal sector workers to professionals - by 
 - 👔 **Manage Gigs Dashboard**: View, track, assign, complete, and cancel gigs
 - 🔢 **Max Applicants Limit**: Auto-close gigs when application limit reached
 - ✏️ **Edit Gigs**: Full edit functionality with form reuse
+
+### Enhanced Gig Filtering & Discovery
+- 🎯 **Sector-Based Skill Filtering**: Smart skill display based on worker sector (professional vs informal)
+  - Professional workers see tech/creative skills (React, Design, Marketing, etc.)
+  - Informal workers see only relevant skills (Construction, Cleaning, Transportation, Customer Service)
+  - Anonymous users see all skills
+- 💰 **Budget Range Filters**: 4 predefined ranges (Under R500, R500-R1k, R1k-R5k, R5k+)
+- ⏱️ **Duration Filters**: 7 options from 1-3 days to Ongoing projects
+- 🏢 **Work Type Filters**: Filter by Remote Only, Physical Only, or All Types
+- ⚡ **Urgency Filters**: Find urgent gigs (≤3 days), This Week, This Month deadlines
+- 🔢 **Advanced Sorting**: 7 sort options
+  - Newest/Oldest first
+  - Highest/Lowest budget
+  - Deadline soon
+  - Most/Least competitive (by application count)
+- 🏷️ **Active Filter Chips**: Visual chips showing active filters with individual removal
+- ⚡ **Quick Filter Presets**: One-click filters for common searches
+  - Quick Work (urgent + nearby + short duration)
+  - High Value (R5k+ gigs)
+  - Remote Only (work from anywhere)
+  - Best Chance (least competitive gigs)
+- 📊 **Real-time Results Count**: Live count updates as filters are applied
+- 📱 **Responsive Filter Panel**: Desktop sidebar + mobile drawer design
 
 ### Application System
 - 📋 **Simplified Application**: Optional message field (no required cover letter)
@@ -146,7 +169,6 @@ Empower all South Africans - from informal sector workers to professionals - by 
 
 #### Month 1-2: UX Improvements
 - **Location Search Enhancement** - Autocomplete with suburb/township support (Google Places API)
-- **Enhanced Gig Filtering** - More sophisticated filtering and sorting options
 - **Performance Optimization** - 2G/3G network optimization for township areas
 - **Skills Development Hub** - Integrate learning resources for job seekers
 
@@ -175,7 +197,7 @@ Empower all South Africans - from informal sector workers to professionals - by 
 - **OCR**: Google Cloud Vision API for ID verification
 - **State Management**: React Context API
 - **Error Handling**: React Error Boundaries
-- **Testing**: Jest with React Testing Library (674 passing tests)
+- **Testing**: Jest with React Testing Library (935 passing tests)
 - **Development**: Hot reload, TypeScript checking, ESLint
 
 ---
