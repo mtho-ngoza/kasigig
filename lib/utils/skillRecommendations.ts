@@ -24,7 +24,7 @@ const SKILL_RELATIONSHIPS: Record<string, string[]> = {
 
   // Manual labor cluster
   Construction: ['Transportation', 'Cleaning'],
-  Cleaning: ['Construction', 'Customer Service'],
+  Cleaning: ['Construction', 'Transportation', 'Customer Service'],
   Transportation: ['Construction', 'Cleaning'],
 
   // General office skills
