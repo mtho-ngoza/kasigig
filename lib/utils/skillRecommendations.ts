@@ -1,78 +1,91 @@
 /**
- * Skill recommendation utility for sector-based skill filtering
- * Shows relevant skills based on user's work sector (professional vs informal)
+ * Skill recommendation utility for personalizing filter suggestions
+ * Based on user's existing skills, recommends complementary skills
  */
 
-// Professional sector: Tech, creative, office work
-const PROFESSIONAL_SKILLS = [
-  'React',
-  'JavaScript',
-  'TypeScript',
-  'Node.js',
-  'Python',
-  'Design',
-  'Marketing',
-  'Writing',
-  'Photography',
-  'Video Editing',
-  'Data Entry',
-  'Customer Service'
-]
+// Map of skills to their complementary/related skills
+const SKILL_RELATIONSHIPS: Record<string, string[]> = {
+  // Tech skills cluster
+  React: ['JavaScript', 'TypeScript', 'Node.js', 'Design'],
+  JavaScript: ['React', 'TypeScript', 'Node.js', 'Design'],
+  TypeScript: ['React', 'JavaScript', 'Node.js'],
+  'Node.js': ['JavaScript', 'TypeScript', 'React', 'Python'],
+  Python: ['Node.js', 'Data Entry', 'JavaScript'],
 
-// Informal sector: Manual labor, services
-const INFORMAL_SKILLS = [
-  'Construction',
-  'Cleaning',
-  'Transportation',
-  'Customer Service'
-]
+  // Design & creative cluster
+  Design: ['React', 'JavaScript', 'Photography', 'Video Editing', 'Marketing'],
+  Photography: ['Video Editing', 'Design', 'Marketing'],
+  'Video Editing': ['Photography', 'Design', 'Marketing'],
 
-// All available skills (for anonymous users or when sector is not specified)
-const ALL_SKILLS = [
-  'React',
-  'JavaScript',
-  'TypeScript',
-  'Node.js',
-  'Python',
-  'Design',
-  'Marketing',
-  'Writing',
-  'Construction',
-  'Cleaning',
-  'Transportation',
-  'Photography',
-  'Video Editing',
-  'Data Entry',
-  'Customer Service'
-]
+  // Marketing & communication cluster
+  Marketing: ['Writing', 'Design', 'Photography', 'Customer Service'],
+  Writing: ['Marketing', 'Customer Service', 'Data Entry'],
+  'Customer Service': ['Marketing', 'Writing', 'Data Entry'],
 
-/**
- * Get relevant skills based on user's work sector
- * @param workerSector - User's work sector ('professional' or 'informal')
- * @returns Array of skills relevant to the sector
- */
-export function getSkillsBySector(
-  workerSector: 'professional' | 'informal' | undefined
-): string[] {
-  if (!workerSector) {
-    return ALL_SKILLS
-  }
+  // Manual labor cluster
+  Construction: ['Transportation', 'Cleaning'],
+  Cleaning: ['Construction', 'Customer Service'],
+  Transportation: ['Construction', 'Cleaning'],
 
-  return workerSector === 'professional' ? PROFESSIONAL_SKILLS : INFORMAL_SKILLS
+  // General office skills
+  'Data Entry': ['Writing', 'Customer Service', 'Python']
 }
 
 /**
- * Get skills to display in filter (sector-aware)
- * @param workerSector - User's work sector
- * @param availableSkills - All possible skills (for filtering)
- * @returns Array of skills to display
+ * Get recommended skills based on user's existing skills
+ * @param userSkills - Array of skills the user already has
+ * @param availableSkills - All possible skills to choose from
+ * @returns Array of recommended skills (excluding ones user already has)
  */
-export function getRelevantSkills(
-  workerSector: 'professional' | 'informal' | undefined,
-  availableSkills: string[] = ALL_SKILLS
+export function getRecommendedSkills(
+  userSkills: string[] | undefined,
+  availableSkills: string[]
 ): string[] {
-  const sectorSkills = getSkillsBySector(workerSector)
+  if (!userSkills || userSkills.length === 0) {
+    return []
+  }
 
-  // Filter to only include skills that are in the available skills list
-  return sectorSkills.filter(skill => availableSkills.includes(skill))
+  const recommendations = new Set<string>()
+
+  // For each user skill, add related skills
+  userSkills.forEach((userSkill) => {
+    const normalizedUserSkill = userSkill.trim()
+
+    // Look for exact match or partial match in skill relationships
+    Object.keys(SKILL_RELATIONSHIPS).forEach((relatedSkill) => {
+      if (
+        relatedSkill.toLowerCase() === normalizedUserSkill.toLowerCase() ||
+        normalizedUserSkill.toLowerCase().includes(relatedSkill.toLowerCase())
+      ) {
+        SKILL_RELATIONSHIPS[relatedSkill].forEach((rec) => {
+          // Only add if it's in available skills and user doesn't already have it
+          if (
+            availableSkills.includes(rec) &&
+            !userSkills.some(
+              (us) => us.toLowerCase() === rec.toLowerCase()
+            )
+          ) {
+            recommendations.add(rec)
+          }
+        })
+      }
+    })
+  })
+
+  // Prioritize recommendations that appear in available skills
+  return Array.from(recommendations).filter((skill) =>
+    availableSkills.includes(skill)
+  )
+}
+
+/**
+ * Get skills to show in "Based on Your Skills" section
+ * Limits to top 6 recommendations
+ */
+export function getTopRecommendedSkills(
+  userSkills: string[] | undefined,
+  availableSkills: string[]
+): string[] {
+  const recommendations = getRecommendedSkills(userSkills, availableSkills)
+  return recommendations.slice(0, 6)
 }

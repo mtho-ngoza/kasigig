@@ -251,4 +251,120 @@ describe('SkillsFilter', () => {
       expect(screen.getByText(/Show All/)).toBeInTheDocument()
     })
   })
+
+  describe('Personalized recommendations', () => {
+    const mockCurrentUser = {
+      id: 'user-1',
+      email: 'test@example.com',
+      firstName: 'Test',
+      lastName: 'User',
+      phone: '+27123456789',
+      location: 'Cape Town',
+      userType: 'job-seeker' as const,
+      skills: ['React', 'Design'],
+      createdAt: new Date()
+    }
+
+    it('should show "Based on Your Skills" section when user has skills', () => {
+      render(
+        <SkillsFilter
+          selectedSkills={[]}
+          onSkillsChange={mockOnSkillsChange}
+          currentUser={mockCurrentUser}
+        />
+      )
+
+      expect(screen.getByText('💡 Based on Your Skills')).toBeInTheDocument()
+    })
+
+    it('should not show "Based on Your Skills" section when user has no skills', () => {
+      const userWithoutSkills = {
+        ...mockCurrentUser,
+        skills: undefined
+      }
+
+      render(
+        <SkillsFilter
+          selectedSkills={[]}
+          onSkillsChange={mockOnSkillsChange}
+          currentUser={userWithoutSkills}
+        />
+      )
+
+      expect(
+        screen.queryByText('💡 Based on Your Skills')
+      ).not.toBeInTheDocument()
+    })
+
+    it('should not show "Based on Your Skills" section when user is not logged in', () => {
+      render(
+        <SkillsFilter
+          selectedSkills={[]}
+          onSkillsChange={mockOnSkillsChange}
+          currentUser={null}
+        />
+      )
+
+      expect(
+        screen.queryByText('💡 Based on Your Skills')
+      ).not.toBeInTheDocument()
+    })
+
+    it('should show "All Skills" heading when recommendations are present', () => {
+      render(
+        <SkillsFilter
+          selectedSkills={[]}
+          onSkillsChange={mockOnSkillsChange}
+          currentUser={mockCurrentUser}
+        />
+      )
+
+      expect(screen.getByText('All Skills')).toBeInTheDocument()
+    })
+
+    it('should not duplicate skills between recommended and all sections', () => {
+      render(
+        <SkillsFilter
+          selectedSkills={[]}
+          onSkillsChange={mockOnSkillsChange}
+          currentUser={mockCurrentUser}
+        />
+      )
+
+      // Count how many times JavaScript appears (should be once, in recommended section)
+      const javascriptLabels = screen.getAllByText('JavaScript')
+      expect(javascriptLabels.length).toBe(1)
+    })
+
+    it('should allow selecting skills from recommended section', () => {
+      render(
+        <SkillsFilter
+          selectedSkills={[]}
+          onSkillsChange={mockOnSkillsChange}
+          currentUser={mockCurrentUser}
+        />
+      )
+
+      // JavaScript should be in recommended section (related to React)
+      const javascriptCheckbox = screen.getByLabelText('JavaScript')
+      fireEvent.click(javascriptCheckbox)
+
+      expect(mockOnSkillsChange).toHaveBeenCalledWith(['JavaScript'])
+    })
+
+    it('should show selected state for skills in recommended section', () => {
+      render(
+        <SkillsFilter
+          selectedSkills={['JavaScript']}
+          onSkillsChange={mockOnSkillsChange}
+          currentUser={mockCurrentUser}
+        />
+      )
+
+      const javascriptCheckbox = screen.getByLabelText(
+        'JavaScript'
+      ) as HTMLInputElement
+      expect(javascriptCheckbox.checked).toBe(true)
+    })
+  })
 })
