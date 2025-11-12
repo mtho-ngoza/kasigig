@@ -93,6 +93,9 @@ export default function PublicGigBrowser({
   const [isLoadingMore, setIsLoadingMore] = useState(false)
   const [lastDocCursor, setLastDocCursor] = useState<DocumentSnapshot<DocumentData> | null>(null)
 
+  // Infinite scroll state
+  const loadMoreTriggerRef = useRef<HTMLDivElement>(null)
+
   // Scroll-triggered animations
   const { ref: statsRef, isInView: statsInView } = useInView()
   const { ref: howItWorksRef, isInView: howItWorksInView } = useInView()
@@ -585,6 +588,34 @@ export default function PublicGigBrowser({
       radiusKm
     }))
   }, [showNearbyOnly, radiusKm])
+
+  // Infinite scroll: Auto-load more gigs when user scrolls near bottom
+  useEffect(() => {
+    const trigger = loadMoreTriggerRef.current
+    if (!trigger || !hasMoreGigs || isLoadingMore) return
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        // When the trigger element becomes visible, load more gigs
+        if (entries[0].isIntersecting && hasMoreGigs && !isLoadingMore) {
+          loadMoreGigs()
+        }
+      },
+      {
+        // Trigger when element is 200px away from viewport
+        rootMargin: '200px',
+        threshold: 0.1
+      }
+    )
+
+    observer.observe(trigger)
+
+    return () => {
+      if (trigger) {
+        observer.unobserve(trigger)
+      }
+    }
+  }, [hasMoreGigs, isLoadingMore, lastDocCursor])
 
   const handleSearch = async () => {
     try {
@@ -1144,9 +1175,13 @@ export default function PublicGigBrowser({
           </div>
         )}
 
-        {/* Load More Button */}
+        {/* Infinite Scroll Trigger & Load More Button */}
         {!loading && hasMoreGigs && filteredAndSortedGigs.length > 0 && (
           <div className="mt-8 text-center">
+            {/* Invisible trigger for infinite scroll */}
+            <div ref={loadMoreTriggerRef} className="h-1" />
+
+            {/* Manual Load More button (backup for infinite scroll) */}
             <Button
               onClick={loadMoreGigs}
               disabled={isLoadingMore}
