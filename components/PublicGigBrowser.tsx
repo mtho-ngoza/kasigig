@@ -18,6 +18,7 @@ import { SortDropdown, SortOption } from '@/components/gig/SortDropdown'
 import { ActiveFilters } from '@/components/gig/ActiveFilters'
 import { GigFilterOptions, DEFAULT_FILTERS } from '@/types/filters'
 import type { DocumentSnapshot, DocumentData } from 'firebase/firestore'
+import { GigCache } from '@/lib/utils/gigCache'
 
 // Custom hook for scroll-triggered animations
 function useInView(options = {}) {
@@ -295,13 +296,28 @@ export default function PublicGigBrowser({
       setHasMoreGigs(false) // Reset pagination state
       setLastDocCursor(null) // Reset cursor
 
-      // Use cursor-based pagination - load only PAGE_SIZE gigs initially
-      // This is a HUGE win for 2G/3G: only 20 documents instead of 100+
-      const { gigs: openGigs, lastDoc } = await GigService.getGigsByStatusWithCursor('open', PAGE_SIZE)
+      // Try to load from cache first (huge win for 2G/3G on revisits)
+      const cacheKey = 'open_gigs_page_1'
+      const cachedGigs = GigCache.get(cacheKey)
 
-      // Store cursor for next page
-      setLastDocCursor(lastDoc)
-      setHasMoreGigs(openGigs.length === PAGE_SIZE && lastDoc !== null)
+      let openGigs: Gig[]
+
+      if (cachedGigs && cachedGigs.length > 0) {
+        // Cache hit! Use cached data (saves Firestore query)
+        openGigs = cachedGigs
+        setHasMoreGigs(cachedGigs.length >= PAGE_SIZE)
+      } else {
+        // Cache miss - fetch from Firestore
+        const result = await GigService.getGigsByStatusWithCursor('open', PAGE_SIZE)
+        openGigs = result.gigs
+
+        // Store cursor for next page
+        setLastDocCursor(result.lastDoc)
+        setHasMoreGigs(openGigs.length === PAGE_SIZE && result.lastDoc !== null)
+
+        // Cache the results for next visit
+        GigCache.set(cacheKey, openGigs)
+      }
 
       // Load application counts and check which gigs user has applied to (only if user is authenticated)
       if (currentUser) {
