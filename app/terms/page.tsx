@@ -14,11 +14,7 @@ export default function TermsOfService() {
       <div className="bg-white border-b border-gray-200 sticky top-0 z-10 shadow-sm">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
           <Link href="/" className="flex items-center hover:opacity-80 transition-opacity">
-            <img
-              src="/logo-full.png"
-              alt="KasiGig - From kasi to career"
-              className="h-12 w-auto"
-            />
+            <span className="text-2xl font-bold text-primary-600">KasiGig</span>
           </Link>
           <Link
             href="/"
