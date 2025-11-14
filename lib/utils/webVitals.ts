@@ -89,7 +89,30 @@ export function getPerformanceSummary(): {
 } {
   if (typeof navigator === 'undefined') return {};
 
-  const connection = (navigator as any).connection || (navigator as any).mozConnection || (navigator as any).webkitConnection;
+  // NetworkInformation API types
+  interface NavigatorWithConnection extends Navigator {
+    connection?: {
+      type?: string;
+      effectiveType?: string;
+      downlink?: number;
+      rtt?: number;
+    };
+    mozConnection?: {
+      type?: string;
+      effectiveType?: string;
+      downlink?: number;
+      rtt?: number;
+    };
+    webkitConnection?: {
+      type?: string;
+      effectiveType?: string;
+      downlink?: number;
+      rtt?: number;
+    };
+  }
+
+  const nav = navigator as NavigatorWithConnection;
+  const connection = nav.connection || nav.mozConnection || nav.webkitConnection;
 
   if (!connection) return {};
 
