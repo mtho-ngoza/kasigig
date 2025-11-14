@@ -1,13 +1,27 @@
 'use client'
 
 import React, { useState, useEffect, useRef } from 'react'
+import dynamic from 'next/dynamic'
 import { GigService } from '@/lib/database/gigService'
 import { Gig } from '@/types/gig'
 import { User } from '@/types/auth'
 import { Button } from '@/components/ui/Button'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card'
-import ApplicationForm from '@/components/application/ApplicationForm'
 import { QuickMessageButton } from '@/components/messaging/QuickMessageButton'
+
+// Lazy load ApplicationForm (only loaded when user clicks "Apply")
+// This reduces initial bundle size for 2G/3G optimization
+const ApplicationForm = dynamic(
+  () => import('@/components/application/ApplicationForm'),
+  {
+    loading: () => (
+      <div className="flex items-center justify-center p-8">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"></div>
+      </div>
+    ),
+    ssr: false
+  }
+)
 import { useToast } from '@/contexts/ToastContext'
 import { useLocation } from '@/contexts/LocationContext'
 import { calculateDistance, formatDistance } from '@/lib/utils/locationUtils'
@@ -17,6 +31,8 @@ import { FilterPanel } from '@/components/gig/FilterPanel'
 import { SortDropdown, SortOption } from '@/components/gig/SortDropdown'
 import { ActiveFilters } from '@/components/gig/ActiveFilters'
 import { GigFilterOptions, DEFAULT_FILTERS } from '@/types/filters'
+import type { DocumentSnapshot, DocumentData } from 'firebase/firestore'
+import { GigCache } from '@/lib/utils/gigCache'
 
 // Custom hook for scroll-triggered animations
 function useInView(options = {}) {
@@ -85,6 +101,15 @@ export default function PublicGigBrowser({
   })
   const [sortOption, setSortOption] = useState<SortOption>('newest')
   const [showFilterPanel, setShowFilterPanel] = useState(false)
+
+  // Pagination state
+  const PAGE_SIZE = 20
+  const [hasMoreGigs, setHasMoreGigs] = useState(true)
+  const [isLoadingMore, setIsLoadingMore] = useState(false)
+  const [lastDocCursor, setLastDocCursor] = useState<DocumentSnapshot<DocumentData> | null>(null)
+
+  // Infinite scroll state
+  const loadMoreTriggerRef = useRef<HTMLDivElement>(null)
 
   // Scroll-triggered animations
   const { ref: statsRef, isInView: statsInView } = useInView()
@@ -282,7 +307,31 @@ export default function PublicGigBrowser({
   const loadGigs = async () => {
     try {
       setLoading(true)
-      const openGigs = await GigService.getGigsByStatus('open')
+      setHasMoreGigs(false) // Reset pagination state
+      setLastDocCursor(null) // Reset cursor
+
+      // Try to load from cache first (huge win for 2G/3G on revisits)
+      const cacheKey = 'open_gigs_page_1'
+      const cachedGigs = GigCache.get(cacheKey)
+
+      let openGigs: Gig[]
+
+      if (cachedGigs && cachedGigs.length > 0) {
+        // Cache hit! Use cached data (saves Firestore query)
+        openGigs = cachedGigs
+        setHasMoreGigs(cachedGigs.length >= PAGE_SIZE)
+      } else {
+        // Cache miss - fetch from Firestore
+        const result = await GigService.getGigsByStatusWithCursor('open', PAGE_SIZE)
+        openGigs = result.gigs
+
+        // Store cursor for next page
+        setLastDocCursor(result.lastDoc)
+        setHasMoreGigs(openGigs.length === PAGE_SIZE && result.lastDoc !== null)
+
+        // Cache the results for next visit
+        GigCache.set(cacheKey, openGigs)
+      }
 
       // Load application counts and check which gigs user has applied to (only if user is authenticated)
       if (currentUser) {
@@ -412,8 +461,11 @@ export default function PublicGigBrowser({
         ]
         const filteredGigs = await filterGigsByLocation(demoGigs)
         setGigs(filteredGigs)
+        setHasMoreGigs(false) // No more gigs in demo mode
+        setLastDocCursor(null)
       } else {
-        const filteredGigs = await filterGigsByLocation(openGigs.slice(0, 20))
+        // Filter gigs by location if needed
+        const filteredGigs = await filterGigsByLocation(openGigs)
         setGigs(filteredGigs)
       }
     } catch (error) {
@@ -435,8 +487,60 @@ export default function PublicGigBrowser({
         createdAt: new Date(),
         updatedAt: new Date()
       }])
+      setHasMoreGigs(false)
     } finally {
       setLoading(false)
+    }
+  }
+
+  const loadMoreGigs = async () => {
+    if (!lastDocCursor) {
+      setHasMoreGigs(false)
+      return
+    }
+
+    setIsLoadingMore(true)
+    try {
+      // Load next batch using cursor-based pagination
+      const { gigs: moreGigs, lastDoc } = await GigService.getGigsByStatusWithCursor(
+        'open',
+        PAGE_SIZE,
+        lastDocCursor
+      )
+
+      // Update cursor for next page
+      setLastDocCursor(lastDoc)
+      setHasMoreGigs(moreGigs.length === PAGE_SIZE && lastDoc !== null)
+
+      // Load application counts for new gigs
+      if (currentUser && moreGigs.length > 0) {
+        const counts: Record<string, number> = {}
+        const appliedGigIds = new Set<string>(userAppliedGigs)
+
+        await Promise.all(
+          moreGigs.map(async (gig) => {
+            const count = await GigService.getApplicationCountByGig(gig.id)
+            counts[gig.id] = count
+
+            const hasApplied = await GigService.hasUserApplied(gig.id, currentUser.id)
+            if (hasApplied) {
+              appliedGigIds.add(gig.id)
+            }
+          })
+        )
+
+        setApplicationCounts(prev => ({ ...prev, ...counts }))
+        setUserAppliedGigs(appliedGigIds)
+      }
+
+      // Append new gigs to existing list
+      const filteredNewGigs = await filterGigsByLocation(moreGigs)
+      setGigs(prev => [...prev, ...filteredNewGigs])
+    } catch (error) {
+      console.error('Error loading more gigs:', error)
+      setHasMoreGigs(false)
+    } finally {
+      setIsLoadingMore(false)
     }
   }
 
@@ -461,8 +565,13 @@ export default function PublicGigBrowser({
   }, [])
 
   useEffect(() => {
-    // Reload gigs whenever the location filter changes (on or off)
-    loadGigs()
+    // Debounce location filter changes to avoid rapid reloads
+    // Especially useful when user is adjusting radius slider
+    const debounceTimer = setTimeout(() => {
+      loadGigs()
+    }, 300) // 300ms delay for location changes
+
+    return () => clearTimeout(debounceTimer)
   }, [showNearbyOnly, radiusKm, currentCoordinates])
 
   // Auto-search when category changes (instant filter)
@@ -481,10 +590,15 @@ export default function PublicGigBrowser({
     return () => clearTimeout(debounceTimer)
   }, [searchTerm])
 
-  // Apply filters and sorting whenever gigs, filters, or sortOption changes
+  // Apply filters and sorting with debouncing to prevent UI freezes
+  // during rapid filter changes (e.g., multiple checkboxes)
   useEffect(() => {
-    const filtered = applyFiltersAndSort(gigs)
-    setFilteredAndSortedGigs(filtered)
+    const debounceTimer = setTimeout(() => {
+      const filtered = applyFiltersAndSort(gigs)
+      setFilteredAndSortedGigs(filtered)
+    }, 150) // 150ms delay for filter application
+
+    return () => clearTimeout(debounceTimer)
   }, [gigs, filters, sortOption, applicationCounts])
 
   // Update filters state when search term or category changes
@@ -505,17 +619,54 @@ export default function PublicGigBrowser({
     }))
   }, [showNearbyOnly, radiusKm])
 
+  // Infinite scroll: Auto-load more gigs when user scrolls near bottom
+  useEffect(() => {
+    const trigger = loadMoreTriggerRef.current
+    if (!trigger || !hasMoreGigs || isLoadingMore) return
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        // When the trigger element becomes visible, load more gigs
+        if (entries[0].isIntersecting && hasMoreGigs && !isLoadingMore) {
+          loadMoreGigs()
+        }
+      },
+      {
+        // Trigger when element is 200px away from viewport
+        rootMargin: '200px',
+        threshold: 0.1
+      }
+    )
+
+    observer.observe(trigger)
+
+    return () => {
+      if (trigger) {
+        observer.unobserve(trigger)
+      }
+    }
+  }, [hasMoreGigs, isLoadingMore, lastDocCursor])
+
   const handleSearch = async () => {
     try {
       setLoading(true)
-      const searchResults = await GigService.searchGigs(searchTerm, selectedCategory || undefined)
-      const openGigs = searchResults.filter(gig => gig.status === 'open').slice(0, 20)
+
+      // Load search results with a reasonable limit
+      const SEARCH_LIMIT = 100
+      const searchResults = await GigService.searchGigs(searchTerm, selectedCategory || undefined, SEARCH_LIMIT)
+      const openGigs = searchResults.filter(gig => gig.status === 'open')
+
+      // Track if there are more gigs
+      setHasMoreGigs(openGigs.length === SEARCH_LIMIT)
+
+      // Only load application counts for first PAGE_SIZE gigs
+      const visibleGigs = openGigs.slice(0, PAGE_SIZE)
 
       // Load application counts for search results (only if user is authenticated)
       if (currentUser) {
         const counts: Record<string, number> = {}
         await Promise.all(
-          openGigs.map(async (gig) => {
+          visibleGigs.map(async (gig) => {
             const count = await GigService.getApplicationCountByGig(gig.id)
             counts[gig.id] = count
           })
@@ -528,6 +679,7 @@ export default function PublicGigBrowser({
     } catch (error) {
       console.error('Error searching gigs:', error)
       setGigs([])
+      setHasMoreGigs(false)
     } finally {
       setLoading(false)
     }
@@ -1050,6 +1202,37 @@ export default function PublicGigBrowser({
                 </CardContent>
               </Card>
             ))}
+          </div>
+        )}
+
+        {/* Infinite Scroll Trigger & Load More Button */}
+        {!loading && hasMoreGigs && filteredAndSortedGigs.length > 0 && (
+          <div className="mt-8 text-center">
+            {/* Invisible trigger for infinite scroll */}
+            <div ref={loadMoreTriggerRef} className="h-1" />
+
+            {/* Manual Load More button (backup for infinite scroll) */}
+            <Button
+              onClick={loadMoreGigs}
+              disabled={isLoadingMore}
+              variant="outline"
+              size="lg"
+            >
+              {isLoadingMore ? (
+                <>
+                  <svg className="animate-spin -ml-1 mr-3 h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  Loading More Gigs...
+                </>
+              ) : (
+                'Load More Gigs'
+              )}
+            </Button>
+            <p className="text-sm text-gray-500 mt-2">
+              Showing {filteredAndSortedGigs.length} gigs
+            </p>
           </div>
         )}
 
