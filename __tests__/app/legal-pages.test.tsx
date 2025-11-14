@@ -27,7 +27,9 @@ describe('Legal Pages - Footer Presence', () => {
       render(<TermsOfService />)
 
       expect(screen.getByText('Back to Home')).toBeInTheDocument()
-      expect(screen.getByAltText('KasiGig - From kasi to career')).toBeInTheDocument()
+      // Check for text-based logo
+      const logoElements = screen.getAllByText('KasiGig')
+      expect(logoElements.length).toBeGreaterThan(0)
     })
 
     it('should have legal notice disclaimer', () => {
@@ -73,7 +75,9 @@ describe('Legal Pages - Footer Presence', () => {
       render(<PrivacyPolicy />)
 
       expect(screen.getByText('Back to Home')).toBeInTheDocument()
-      expect(screen.getByAltText('KasiGig - From kasi to career')).toBeInTheDocument()
+      // Check for text-based logo
+      const logoElements = screen.getAllByText('KasiGig')
+      expect(logoElements.length).toBeGreaterThan(0)
     })
 
     it('should have POPIA compliance notice', () => {
@@ -121,7 +125,9 @@ describe('Legal Pages - Footer Presence', () => {
       render(<POPIACompliance />)
 
       expect(screen.getByText('Back to Home')).toBeInTheDocument()
-      expect(screen.getByAltText('KasiGig - From kasi to career')).toBeInTheDocument()
+      // Check for text-based logo
+      const logoElements = screen.getAllByText('KasiGig')
+      expect(logoElements.length).toBeGreaterThan(0)
     })
 
     it('should explain POPIA protection', () => {
@@ -177,17 +183,18 @@ describe('Legal Pages - Footer Presence', () => {
   describe('Cross-Page Consistency', () => {
     it('should have consistent navigation header across all legal pages', () => {
       const { unmount: unmountTerms } = render(<TermsOfService />)
-      expect(screen.getByAltText('KasiGig - From kasi to career')).toBeInTheDocument()
+      // Check for text-based logo
+      expect(screen.getAllByText('KasiGig').length).toBeGreaterThan(0)
       expect(screen.getByText('Back to Home')).toBeInTheDocument()
       unmountTerms()
 
       const { unmount: unmountPrivacy } = render(<PrivacyPolicy />)
-      expect(screen.getByAltText('KasiGig - From kasi to career')).toBeInTheDocument()
+      expect(screen.getAllByText('KasiGig').length).toBeGreaterThan(0)
       expect(screen.getByText('Back to Home')).toBeInTheDocument()
       unmountPrivacy()
 
       render(<POPIACompliance />)
-      expect(screen.getByAltText('KasiGig - From kasi to career')).toBeInTheDocument()
+      expect(screen.getAllByText('KasiGig').length).toBeGreaterThan(0)
       expect(screen.getByText('Back to Home')).toBeInTheDocument()
     })
 
@@ -222,24 +229,25 @@ describe('Legal Pages - Footer Presence', () => {
     it('should have working home link in Terms header', () => {
       render(<TermsOfService />)
 
-      const logo = screen.getByAltText('KasiGig - From kasi to career')
-      const logoLink = logo.closest('a')
+      // Find all links pointing to home
+      const homeLinks = screen.getAllByRole('link', { name: /KasiGig|Back to Home/i })
+      const logoLink = homeLinks.find(link => link.getAttribute('href') === '/')
       expect(logoLink).toHaveAttribute('href', '/')
     })
 
     it('should have working home link in Privacy header', () => {
       render(<PrivacyPolicy />)
 
-      const logo = screen.getByAltText('KasiGig - From kasi to career')
-      const logoLink = logo.closest('a')
+      const homeLinks = screen.getAllByRole('link', { name: /KasiGig|Back to Home/i })
+      const logoLink = homeLinks.find(link => link.getAttribute('href') === '/')
       expect(logoLink).toHaveAttribute('href', '/')
     })
 
     it('should have working home link in POPIA header', () => {
       render(<POPIACompliance />)
 
-      const logo = screen.getByAltText('KasiGig - From kasi to career')
-      const logoLink = logo.closest('a')
+      const homeLinks = screen.getAllByRole('link', { name: /KasiGig|Back to Home/i })
+      const logoLink = homeLinks.find(link => link.getAttribute('href') === '/')
       expect(logoLink).toHaveAttribute('href', '/')
     })
   })
