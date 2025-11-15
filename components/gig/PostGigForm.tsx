@@ -9,6 +9,7 @@ import { useAuth } from '@/contexts/AuthContext'
 import { useToast } from '@/contexts/ToastContext'
 import LocationAutocomplete from '@/components/location/LocationAutocomplete'
 import { Gig } from '@/types/gig'
+import { getMarketRateGuidance, suggestBudget, validateBudgetAgainstMinimum } from '@/lib/utils/marketRateGuidance'
 
 interface PostGigFormProps {
   editGig?: Gig
@@ -96,6 +97,11 @@ export default function PostGigForm({ editGig, onSuccess, onCancel }: PostGigFor
   const { user } = useAuth()
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [errors, setErrors] = useState<Partial<GigFormData>>({})
+  const [budgetSuggestion, setBudgetSuggestion] = useState<{
+    minimum: number
+    recommended: number
+    description: string
+  } | null>(null)
   const [formData, setFormData] = useState<GigFormData>({
     title: '',
     description: '',
@@ -126,6 +132,24 @@ export default function PostGigForm({ editGig, onSuccess, onCancel }: PostGigFor
       })
     }
   }, [editGig])
+
+  // Update budget suggestion when category or duration changes
+  useEffect(() => {
+    if (formData.category && formData.duration) {
+      const suggestion = suggestBudget(formData.category, formData.duration)
+      setBudgetSuggestion(suggestion)
+    } else if (formData.category) {
+      // Show category guidance even without duration
+      const guidance = getMarketRateGuidance(formData.category)
+      setBudgetSuggestion({
+        minimum: guidance.minimumDaily,
+        recommended: guidance.recommendedDaily,
+        description: guidance.description
+      })
+    } else {
+      setBudgetSuggestion(null)
+    }
+  }, [formData.category, formData.duration])
 
   // Determine if this is an informal work category
   const isInformalWork = ['Construction', 'Transportation', 'Cleaning', 'Healthcare', 'Other'].includes(formData.category)
@@ -247,6 +271,12 @@ export default function PostGigForm({ editGig, onSuccess, onCancel }: PostGigFor
         newErrors.budget = 'Budget must be a valid positive number'
       } else if (budgetNum < 100) {
         newErrors.budget = 'Budget must be at least R100'
+      } else if (formData.category && formData.duration) {
+        // Validate against minimum wage for category
+        const validation = validateBudgetAgainstMinimum(budgetNum, formData.category, formData.duration)
+        if (!validation.isValid) {
+          newErrors.budget = `Budget is below minimum wage. Minimum: R${validation.minimumRequired.toFixed(0)}`
+        }
       }
     }
 
@@ -479,7 +509,37 @@ export default function PostGigForm({ editGig, onSuccess, onCancel }: PostGigFor
               {errors.budget && (
                 <p className="mt-1 text-sm text-red-600">{errors.budget}</p>
               )}
-              <p className="mt-1 text-sm text-gray-500">Minimum R100</p>
+
+              {/* Market Rate Guidance */}
+              {budgetSuggestion && (
+                <div className="mt-2 p-3 bg-blue-50 border border-blue-200 rounded-md">
+                  <div className="flex items-start gap-2">
+                    <span className="text-blue-600 text-lg">💡</span>
+                    <div className="flex-1">
+                      <p className="text-xs font-medium text-blue-900 mb-1">Market Rate Guidance</p>
+                      <p className="text-xs text-blue-800 mb-2">{budgetSuggestion.description}</p>
+                      <div className="grid grid-cols-2 gap-2 text-xs">
+                        <div>
+                          <span className="text-blue-600">Minimum:</span>
+                          <span className="ml-1 font-semibold text-blue-900">
+                            R{budgetSuggestion.minimum.toFixed(0)}
+                          </span>
+                        </div>
+                        <div>
+                          <span className="text-blue-600">Recommended:</span>
+                          <span className="ml-1 font-semibold text-blue-900">
+                            R{budgetSuggestion.recommended.toFixed(0)}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {!budgetSuggestion && (
+                <p className="mt-1 text-sm text-gray-500">Minimum R100</p>
+              )}
             </div>
 
             <div>
