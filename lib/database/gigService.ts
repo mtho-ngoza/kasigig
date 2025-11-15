@@ -10,6 +10,9 @@ import {
 } from '@/lib/utils/locationUtils';
 import type { DocumentSnapshot, DocumentData } from 'firebase/firestore';
 
+// Application limits to prevent spam
+const MAX_ACTIVE_APPLICATIONS_PER_WORKER = 20;
+
 export class GigService {
   // Gig CRUD operations
   static async createGig(gigData: Omit<Gig, 'id' | 'createdAt' | 'updatedAt'>): Promise<string> {
@@ -293,6 +296,15 @@ export class GigService {
   static async createApplication(
     applicationData: Omit<GigApplication, 'id' | 'createdAt' | 'status'>
   ): Promise<string> {
+    // Check if worker has reached the active applications limit (spam prevention)
+    const activeApplicationsCount = await this.countActiveApplicationsByWorker(applicationData.applicantId);
+    if (activeApplicationsCount >= MAX_ACTIVE_APPLICATIONS_PER_WORKER) {
+      throw new Error(
+        `You have reached the maximum limit of ${MAX_ACTIVE_APPLICATIONS_PER_WORKER} active applications. ` +
+        `Please wait for responses on your current applications or withdraw some before applying to more gigs.`
+      );
+    }
+
     // Check if gig exists and get its maxApplicants setting
     const gig = await FirestoreService.getById<Gig>('gigs', applicationData.gigId);
     if (!gig) {
@@ -363,6 +375,21 @@ export class GigService {
 
   static async getApplicationsByApplicant(applicantId: string): Promise<GigApplication[]> {
     return await FirestoreService.getWhere<GigApplication>('applications', 'applicantId', '==', applicantId, 'createdAt');
+  }
+
+  /**
+   * Count active applications for a worker (pending, accepted, or funded)
+   * Used to enforce application limits and prevent spam
+   */
+  static async countActiveApplicationsByWorker(applicantId: string): Promise<number> {
+    const applications = await this.getApplicationsByApplicant(applicantId);
+
+    // Count applications that are still active (not rejected, completed, or withdrawn)
+    const activeApplications = applications.filter(
+      app => app.status === 'pending' || app.status === 'accepted' || app.status === 'funded'
+    );
+
+    return activeApplications.length;
   }
 
   static async hasUserApplied(gigId: string, applicantId: string): Promise<boolean> {
