@@ -548,6 +548,8 @@ describe('GigService - Application Management', () => {
 
     beforeEach(() => {
       (FirestoreService.getById as jest.Mock).mockResolvedValue(mockGig);
+      // Reset getWhere mock to prevent test pollution from previous error handling tests
+      (FirestoreService.getWhere as jest.Mock).mockReset();
     });
 
     it('should prevent duplicate applications from same user to same gig', async () => {
@@ -563,6 +565,8 @@ describe('GigService - Application Management', () => {
         createdAt: new Date()
       };
 
+      // Mock getWhere for active applications count check (returns existing application)
+      (FirestoreService.getWhere as jest.Mock).mockResolvedValue([existingApplication]);
       (FirestoreService.getWhereCompound as jest.Mock).mockResolvedValue([existingApplication]);
 
       await expect(GigService.createApplication(mockApplicationData)).rejects.toThrow(
@@ -631,6 +635,8 @@ describe('GigService - Application Management', () => {
         createdAt: new Date()
       };
 
+      // Mock getWhere for active applications count check
+      (FirestoreService.getWhere as jest.Mock).mockResolvedValue([rejectedApplication]);
       (FirestoreService.getWhereCompound as jest.Mock).mockResolvedValue([rejectedApplication]);
 
       await expect(GigService.createApplication(mockApplicationData)).rejects.toThrow(
@@ -652,10 +658,317 @@ describe('GigService - Application Management', () => {
         createdAt: new Date()
       };
 
+      // Mock getWhere for active applications count check
+      (FirestoreService.getWhere as jest.Mock).mockResolvedValue([acceptedApplication]);
       (FirestoreService.getWhereCompound as jest.Mock).mockResolvedValue([acceptedApplication]);
 
       await expect(GigService.createApplication(mockApplicationData)).rejects.toThrow(
         'You have already applied to this gig'
+      );
+
+      expect(FirestoreService.create).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('countActiveApplicationsByWorker', () => {
+    it('should count only active applications (pending, accepted, funded)', async () => {
+      const mockApplications: GigApplication[] = [
+        {
+          id: 'app-1',
+          gigId: 'gig-1',
+          applicantId: mockApplicantId,
+          applicantName: 'John Doe',
+          message: 'Test',
+          proposedRate: 1000,
+          status: 'pending',
+          createdAt: new Date()
+        },
+        {
+          id: 'app-2',
+          gigId: 'gig-2',
+          applicantId: mockApplicantId,
+          applicantName: 'John Doe',
+          message: 'Test',
+          proposedRate: 1000,
+          status: 'accepted',
+          createdAt: new Date()
+        },
+        {
+          id: 'app-3',
+          gigId: 'gig-3',
+          applicantId: mockApplicantId,
+          applicantName: 'John Doe',
+          message: 'Test',
+          proposedRate: 1000,
+          status: 'funded',
+          createdAt: new Date()
+        },
+        {
+          id: 'app-4',
+          gigId: 'gig-4',
+          applicantId: mockApplicantId,
+          applicantName: 'John Doe',
+          message: 'Test',
+          proposedRate: 1000,
+          status: 'rejected',
+          createdAt: new Date()
+        },
+        {
+          id: 'app-5',
+          gigId: 'gig-5',
+          applicantId: mockApplicantId,
+          applicantName: 'John Doe',
+          message: 'Test',
+          proposedRate: 1000,
+          status: 'completed',
+          createdAt: new Date()
+        },
+        {
+          id: 'app-6',
+          gigId: 'gig-6',
+          applicantId: mockApplicantId,
+          applicantName: 'John Doe',
+          message: 'Test',
+          proposedRate: 1000,
+          status: 'withdrawn',
+          createdAt: new Date()
+        }
+      ];
+
+      (FirestoreService.getWhere as jest.Mock).mockResolvedValue(mockApplications);
+
+      const count = await GigService.countActiveApplicationsByWorker(mockApplicantId);
+
+      // Should count only pending (1) + accepted (1) + funded (1) = 3
+      // Should NOT count rejected, completed, or withdrawn
+      expect(count).toBe(3);
+      expect(FirestoreService.getWhere).toHaveBeenCalledWith(
+        'applications',
+        'applicantId',
+        '==',
+        mockApplicantId,
+        'createdAt'
+      );
+    });
+
+    it('should return 0 when worker has no active applications', async () => {
+      const mockApplications: GigApplication[] = [
+        {
+          id: 'app-1',
+          gigId: 'gig-1',
+          applicantId: mockApplicantId,
+          applicantName: 'John Doe',
+          message: 'Test',
+          proposedRate: 1000,
+          status: 'rejected',
+          createdAt: new Date()
+        },
+        {
+          id: 'app-2',
+          gigId: 'gig-2',
+          applicantId: mockApplicantId,
+          applicantName: 'John Doe',
+          message: 'Test',
+          proposedRate: 1000,
+          status: 'completed',
+          createdAt: new Date()
+        }
+      ];
+
+      (FirestoreService.getWhere as jest.Mock).mockResolvedValue(mockApplications);
+
+      const count = await GigService.countActiveApplicationsByWorker(mockApplicantId);
+
+      expect(count).toBe(0);
+    });
+
+    it('should return 0 when worker has no applications at all', async () => {
+      (FirestoreService.getWhere as jest.Mock).mockResolvedValue([]);
+
+      const count = await GigService.countActiveApplicationsByWorker(mockApplicantId);
+
+      expect(count).toBe(0);
+    });
+  });
+
+  describe('createApplication - Application Limits', () => {
+    const mockGig: Gig = {
+      id: mockGigId,
+      title: 'Test Gig',
+      description: 'Test Description',
+      category: 'technology',
+      location: 'Johannesburg',
+      budget: 1000,
+      duration: '1 week',
+      skillsRequired: ['JavaScript'],
+      employerId: mockEmployerId,
+      employerName: 'Employer Name',
+      status: 'open',
+      applicants: [],
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      workType: 'remote'
+    };
+
+    const mockApplicationData = {
+      gigId: mockGigId,
+      applicantId: mockApplicantId,
+      applicantName: 'John Doe',
+      message: 'I am interested',
+      proposedRate: 1000
+    };
+
+    beforeEach(() => {
+      (FirestoreService.getById as jest.Mock).mockResolvedValue(mockGig);
+      (FirestoreService.getWhereCompound as jest.Mock).mockResolvedValue([]);
+      (FirestoreService.getWhere as jest.Mock).mockResolvedValue([]);
+    });
+
+    it('should reject application when worker has 20 active applications', async () => {
+      // Create 20 active applications
+      const activeApplications: GigApplication[] = Array.from({ length: 20 }, (_, i) => ({
+        id: `app-${i}`,
+        gigId: `gig-${i}`,
+        applicantId: mockApplicantId,
+        applicantName: 'John Doe',
+        message: 'Test',
+        proposedRate: 1000,
+        status: 'pending' as const,
+        createdAt: new Date()
+      }));
+
+      (FirestoreService.getWhere as jest.Mock).mockResolvedValue(activeApplications);
+
+      await expect(GigService.createApplication(mockApplicationData)).rejects.toThrow(
+        'You have reached the maximum limit of 20 active applications'
+      );
+
+      expect(FirestoreService.create).not.toHaveBeenCalled();
+    });
+
+    it('should allow application when worker has 19 active applications', async () => {
+      // Create 19 active applications
+      const activeApplications: GigApplication[] = Array.from({ length: 19 }, (_, i) => ({
+        id: `app-${i}`,
+        gigId: `gig-${i}`,
+        applicantId: mockApplicantId,
+        applicantName: 'John Doe',
+        message: 'Test',
+        proposedRate: 1000,
+        status: 'pending' as const,
+        createdAt: new Date()
+      }));
+
+      (FirestoreService.getWhere as jest.Mock).mockResolvedValue(activeApplications);
+      (FirestoreService.create as jest.Mock).mockResolvedValue('new-app-123');
+
+      const applicationId = await GigService.createApplication(mockApplicationData);
+
+      expect(applicationId).toBe('new-app-123');
+      expect(FirestoreService.create).toHaveBeenCalled();
+    });
+
+    it('should not count rejected/completed/withdrawn applications toward limit', async () => {
+      // Create 15 pending + 10 rejected applications (only 15 should count)
+      const applications: GigApplication[] = [
+        ...Array.from({ length: 15 }, (_, i) => ({
+          id: `app-pending-${i}`,
+          gigId: `gig-${i}`,
+          applicantId: mockApplicantId,
+          applicantName: 'John Doe',
+          message: 'Test',
+          proposedRate: 1000,
+          status: 'pending' as const,
+          createdAt: new Date()
+        })),
+        ...Array.from({ length: 10 }, (_, i) => ({
+          id: `app-rejected-${i}`,
+          gigId: `gig-${i + 15}`,
+          applicantId: mockApplicantId,
+          applicantName: 'John Doe',
+          message: 'Test',
+          proposedRate: 1000,
+          status: 'rejected' as const,
+          createdAt: new Date()
+        }))
+      ];
+
+      (FirestoreService.getWhere as jest.Mock).mockResolvedValue(applications);
+      (FirestoreService.create as jest.Mock).mockResolvedValue('new-app-123');
+
+      // Should succeed since only 15 active applications (under the 20 limit)
+      const applicationId = await GigService.createApplication(mockApplicationData);
+
+      expect(applicationId).toBe('new-app-123');
+      expect(FirestoreService.create).toHaveBeenCalled();
+    });
+
+    it('should provide helpful error message with suggestions', async () => {
+      const activeApplications: GigApplication[] = Array.from({ length: 20 }, (_, i) => ({
+        id: `app-${i}`,
+        gigId: `gig-${i}`,
+        applicantId: mockApplicantId,
+        applicantName: 'John Doe',
+        message: 'Test',
+        proposedRate: 1000,
+        status: 'pending' as const,
+        createdAt: new Date()
+      }));
+
+      (FirestoreService.getWhere as jest.Mock).mockResolvedValue(activeApplications);
+
+      try {
+        await GigService.createApplication(mockApplicationData);
+        fail('Should have thrown an error');
+      } catch (error) {
+        expect(error).toBeInstanceOf(Error);
+        if (error instanceof Error) {
+          expect(error.message).toContain('maximum limit of 20 active applications');
+          expect(error.message).toContain('wait for responses');
+          expect(error.message).toContain('withdraw some');
+        }
+      }
+    });
+
+    it('should count mixed active statuses (pending + accepted + funded)', async () => {
+      // Create 7 pending + 7 accepted + 7 funded = 21 active (over limit)
+      const applications: GigApplication[] = [
+        ...Array.from({ length: 7 }, (_, i) => ({
+          id: `app-pending-${i}`,
+          gigId: `gig-${i}`,
+          applicantId: mockApplicantId,
+          applicantName: 'John Doe',
+          message: 'Test',
+          proposedRate: 1000,
+          status: 'pending' as const,
+          createdAt: new Date()
+        })),
+        ...Array.from({ length: 7 }, (_, i) => ({
+          id: `app-accepted-${i}`,
+          gigId: `gig-${i + 7}`,
+          applicantId: mockApplicantId,
+          applicantName: 'John Doe',
+          message: 'Test',
+          proposedRate: 1000,
+          status: 'accepted' as const,
+          createdAt: new Date()
+        })),
+        ...Array.from({ length: 7 }, (_, i) => ({
+          id: `app-funded-${i}`,
+          gigId: `gig-${i + 14}`,
+          applicantId: mockApplicantId,
+          applicantName: 'John Doe',
+          message: 'Test',
+          proposedRate: 1000,
+          status: 'funded' as const,
+          createdAt: new Date()
+        }))
+      ];
+
+      (FirestoreService.getWhere as jest.Mock).mockResolvedValue(applications);
+
+      await expect(GigService.createApplication(mockApplicationData)).rejects.toThrow(
+        'You have reached the maximum limit of 20 active applications'
       );
 
       expect(FirestoreService.create).not.toHaveBeenCalled();

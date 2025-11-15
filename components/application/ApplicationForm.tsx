@@ -199,7 +199,9 @@ export default function ApplicationForm({ gig, onSuccess, onCancel }: Applicatio
       }
     } catch (error) {
       console.error('Error submitting application:', error)
-      showError('Failed to submit application. Please try again.')
+      // Show specific error message (e.g., application limit reached, duplicate application, etc.)
+      const errorMessage = error instanceof Error ? error.message : 'Failed to submit application. Please try again.'
+      showError(errorMessage)
     } finally {
       setIsSubmitting(false)
     }
