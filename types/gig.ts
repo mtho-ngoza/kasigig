@@ -34,6 +34,7 @@ export interface GigApplication {
   paymentStatus?: 'unpaid' | 'paid' | 'in_escrow' | 'released' | 'disputed'
   paymentId?: string // Reference to the payment record
   createdAt: Date
+  acceptedAt?: Date // When application was accepted (for funding timeout tracking)
   // Worker completion request fields
   completionRequestedAt?: Date // When worker requested completion
   completionRequestedBy?: 'worker' | 'employer' // Who initiated completion request

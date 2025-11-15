@@ -392,7 +392,13 @@ export class GigService {
       }
     }
 
-    await FirestoreService.update('applications', applicationId, { status });
+    // Set acceptedAt timestamp when accepting an application
+    const updateData: Partial<GigApplication> = { status };
+    if (status === 'accepted') {
+      updateData.acceptedAt = new Date();
+    }
+
+    await FirestoreService.update('applications', applicationId, updateData);
 
     // If accepted, assign worker and reject other applications
     // Note: Gig status remains 'open' until funded to allow backup applications
@@ -987,6 +993,102 @@ export class GigService {
     if (gig.deadline && now > gig.deadline) {
       await this.updateGig(gig.id, { status: 'cancelled' })
       console.log(`Expired overdue gig ${gig.id}`)
+      return true
+    }
+
+    return false
+  }
+
+  /**
+   * Timeout unfunded accepted applications after 48 hours
+   * This function can be called manually or scheduled to run periodically
+   * @returns Object with count of timed-out applications
+   */
+  static async timeoutUnfundedApplications(): Promise<{
+    timedOut: number
+  }> {
+    const now = new Date()
+    const fortyEightHoursAgo = new Date(now.getTime() - 48 * 60 * 60 * 1000)
+
+    let timedOut = 0
+
+    // Get all accepted applications
+    const acceptedApplications = await FirestoreService.getWhere<GigApplication>(
+      'applications',
+      'status',
+      '==',
+      'accepted'
+    )
+
+    for (const application of acceptedApplications) {
+      try {
+        // Check if application was accepted more than 48 hours ago
+        if (application.acceptedAt && application.acceptedAt <= fortyEightHoursAgo) {
+          // Timeout the application (reject it)
+          await FirestoreService.update('applications', application.id, {
+            status: 'rejected'
+          })
+
+          // Unassign worker from gig (set back to undefined)
+          await this.updateGig(application.gigId, {
+            assignedTo: undefined
+          })
+
+          timedOut++
+          console.log(
+            `Timed out unfunded application ${application.id} (accepted ${application.acceptedAt.toISOString()})`
+          )
+        }
+      } catch (error) {
+        console.error(`Error timing out application ${application.id}:`, error)
+        // Continue processing other applications even if one fails
+      }
+    }
+
+    console.log(`Funding timeout complete: ${timedOut} applications timed out`)
+
+    return {
+      timedOut
+    }
+  }
+
+  /**
+   * Check if a single application should be timed out and timeout if needed
+   * Useful for on-demand timeout checks
+   * @param applicationId The application ID to check
+   * @returns Whether the application was timed out
+   */
+  static async checkAndTimeoutApplication(applicationId: string): Promise<boolean> {
+    const application = await FirestoreService.getById<GigApplication>('applications', applicationId)
+    if (!application) {
+      return false
+    }
+
+    // Only check accepted applications
+    if (application.status !== 'accepted') {
+      return false
+    }
+
+    // Check if acceptedAt timestamp exists and is older than 48 hours
+    if (!application.acceptedAt) {
+      return false
+    }
+
+    const now = new Date()
+    const fortyEightHoursAgo = new Date(now.getTime() - 48 * 60 * 60 * 1000)
+
+    if (application.acceptedAt <= fortyEightHoursAgo) {
+      // Timeout the application
+      await FirestoreService.update('applications', application.id, {
+        status: 'rejected'
+      })
+
+      // Unassign worker from gig
+      await this.updateGig(application.gigId, {
+        assignedTo: undefined
+      })
+
+      console.log(`Timed out unfunded application ${application.id}`)
       return true
     }
 
