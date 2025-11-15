@@ -21,6 +21,8 @@ describe('ReviewService', () => {
     rating: 4,
     comment: 'Great work! Very professional and delivered on time.',
     type: 'employer-to-worker',
+    isRevealed: true,
+    reviewDeadline: new Date('2025-12-31'),
   }
 
   const mockReview: Review = {
@@ -225,6 +227,8 @@ describe('ReviewService', () => {
             reviewerId: correctReviewData.reviewerId,
             revieweeId: correctReviewData.revieweeId,
             type: correctReviewData.type,
+            isRevealed: true,
+            reviewDeadline: new Date('2025-12-31'),
           }
           jest.mocked(FirestoreService.getWhere).mockResolvedValue([existingReview])
 
@@ -468,9 +472,9 @@ describe('ReviewService', () => {
         it('then returns average rating and count', async () => {
           // Given
           const reviews = [
-            { ...mockReview, rating: 5 },
-            { ...mockReview, id: 'rev-2', rating: 4 },
-            { ...mockReview, id: 'rev-3', rating: 5 },
+            { ...mockReview, rating: 5, isRevealed: true, reviewDeadline: new Date('2025-12-31') },
+            { ...mockReview, id: 'rev-2', rating: 4, isRevealed: true, reviewDeadline: new Date('2025-12-31') },
+            { ...mockReview, id: 'rev-3', rating: 5, isRevealed: true, reviewDeadline: new Date('2025-12-31') },
           ]
           jest.mocked(FirestoreService.getWhere).mockResolvedValue(reviews)
 
@@ -505,8 +509,8 @@ describe('ReviewService', () => {
         it('then returns 5.0 rating', async () => {
           // Given
           const reviews = [
-            { ...mockReview, rating: 5 },
-            { ...mockReview, id: 'rev-2', rating: 5 },
+            { ...mockReview, rating: 5, isRevealed: true, reviewDeadline: new Date('2025-12-31') },
+            { ...mockReview, id: 'rev-2', rating: 5, isRevealed: true, reviewDeadline: new Date('2025-12-31') },
           ]
           jest.mocked(FirestoreService.getWhere).mockResolvedValue(reviews)
 
@@ -549,6 +553,8 @@ describe('ReviewService', () => {
             ...mockReview,
             reviewerId: mockReviewerId,
             revieweeId: mockRevieweeId,
+            isRevealed: true,
+            reviewDeadline: new Date('2025-12-31'),
           }
           jest.mocked(FirestoreService.getWhere).mockResolvedValue([existingReview])
 
@@ -573,6 +579,8 @@ describe('ReviewService', () => {
             ...mockReview,
             reviewerId: 'different-reviewer',
             revieweeId: mockRevieweeId,
+            isRevealed: true,
+            reviewDeadline: new Date('2025-12-31'),
           }
           jest.mocked(FirestoreService.getWhere).mockResolvedValue([existingReview])
 
@@ -596,11 +604,11 @@ describe('ReviewService', () => {
         it('then returns average and distribution', async () => {
           // Given
           const reviews = [
-            { ...mockReview, rating: 5 },
-            { ...mockReview, id: 'rev-2', rating: 4 },
-            { ...mockReview, id: 'rev-3', rating: 5 },
-            { ...mockReview, id: 'rev-4', rating: 3 },
-            { ...mockReview, id: 'rev-5', rating: 5 },
+            { ...mockReview, rating: 5, isRevealed: true, reviewDeadline: new Date('2025-12-31') },
+            { ...mockReview, id: 'rev-2', rating: 4, isRevealed: true, reviewDeadline: new Date('2025-12-31') },
+            { ...mockReview, id: 'rev-3', rating: 5, isRevealed: true, reviewDeadline: new Date('2025-12-31') },
+            { ...mockReview, id: 'rev-4', rating: 3, isRevealed: true, reviewDeadline: new Date('2025-12-31') },
+            { ...mockReview, id: 'rev-5', rating: 5, isRevealed: true, reviewDeadline: new Date('2025-12-31') },
           ]
           jest.mocked(FirestoreService.getWhere).mockResolvedValue(reviews)
 
@@ -649,9 +657,9 @@ describe('ReviewService', () => {
         it('then returns correct distribution', async () => {
           // Given
           const reviews = [
-            { ...mockReview, rating: 4 },
-            { ...mockReview, id: 'rev-2', rating: 4 },
-            { ...mockReview, id: 'rev-3', rating: 4 },
+            { ...mockReview, rating: 4, isRevealed: true, reviewDeadline: new Date('2025-12-31') },
+            { ...mockReview, id: 'rev-2', rating: 4, isRevealed: true, reviewDeadline: new Date('2025-12-31') },
+            { ...mockReview, id: 'rev-3', rating: 4, isRevealed: true, reviewDeadline: new Date('2025-12-31') },
           ]
           jest.mocked(FirestoreService.getWhere).mockResolvedValue(reviews)
 
