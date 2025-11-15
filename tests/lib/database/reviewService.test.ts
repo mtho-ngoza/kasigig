@@ -21,7 +21,7 @@ describe('ReviewService', () => {
     rating: 4,
     comment: 'Great work! Very professional and delivered on time.',
     type: 'employer-to-worker',
-    isRevealed: true,
+    isRevealed: false, // Reviews start hidden (mutual reveal)
     reviewDeadline: new Date('2025-12-31'),
   }
 
@@ -57,15 +57,20 @@ describe('ReviewService', () => {
   describe('createReview', () => {
     describe('given valid review data', () => {
       describe('when creating a review', () => {
-        it('then creates review and updates user rating', async () => {
+        it('then creates review with mutual reveal (not revealed yet)', async () => {
           // Given
           const validReviewData = {
-            ...mockReviewData,
+            gigId: mockGigId,
+            reviewerId: mockReviewerId,
+            revieweeId: mockRevieweeId,
+            rating: 4,
+            comment: 'Great work! Very professional and delivered on time.',
             type: 'worker-to-employer' as const // Worker (mockReviewerId) reviewing employer (mockRevieweeId)
           }
           jest.mocked(GigService.getGigById).mockResolvedValue(mockGig)
-          jest.mocked(FirestoreService.getWhere).mockResolvedValue([])
+          jest.mocked(FirestoreService.getWhere).mockResolvedValue([]) // No existing reviews (for both duplicate check and gig reviews check)
           jest.mocked(FirestoreService.create).mockResolvedValue(mockReviewId)
+          jest.mocked(FirestoreService.getById).mockResolvedValue(null) // Review not revealed (no counter-review yet)
           jest.mocked(FirestoreService.update).mockResolvedValue()
 
           // When
@@ -78,15 +83,16 @@ describe('ReviewService', () => {
             'reviews',
             expect.objectContaining({
               ...validReviewData,
+              isRevealed: false, // Reviews start hidden until both parties submit
+              reviewDeadline: expect.any(Date), // 30 days from now
               createdAt: expect.any(Date),
             })
           )
-          expect(FirestoreService.getWhere).toHaveBeenCalledWith(
-            'reviews',
-            'revieweeId',
-            '==',
-            mockRevieweeId,
-            'createdAt'
+          // User rating should NOT be updated since review is not revealed yet
+          expect(FirestoreService.update).not.toHaveBeenCalledWith(
+            'users',
+            expect.anything(),
+            expect.objectContaining({ rating: expect.anything() })
           )
         })
       })
