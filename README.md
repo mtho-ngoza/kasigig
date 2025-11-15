@@ -242,7 +242,7 @@ Empower all South Africans - from informal sector workers to professionals - by 
 - ✅ ~~**Application Limits**~~ - **COMPLETED**: Prevents spam by limiting workers to 20 active applications (pending/accepted/funded). Workers see helpful error message suggesting they wait for responses or withdraw applications. Includes comprehensive tests.
 
 #### Trust & Verification
-- 💡 **Soft Verification Nudges** - "Verified users get 3x more responses" encouragement
+- ✅ ~~**Soft Verification Nudges**~~ - **COMPLETED**: Encouraging informational nudges for unverified workers showing "3x more responses" stats. Displayed in ProfileManagement (banner), ApplicationForm (inline), with 3 variants (banner/card/inline) for flexible placement. Non-intrusive soft encouragement with clear CTA to verification center.
 - 💡 **Review Improvements** - Mutual review reveal, 30-day review deadline
 - 💡 **Market Rate Guidance** - Category-specific minimum wage suggestions
 
