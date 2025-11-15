@@ -534,7 +534,8 @@ describe('GigService - Application Management', () => {
       status: 'open',
       applicants: [],
       createdAt: new Date(),
-      updatedAt: new Date()
+      updatedAt: new Date(),
+      workType: 'remote'
     };
 
     const mockApplicationData = {

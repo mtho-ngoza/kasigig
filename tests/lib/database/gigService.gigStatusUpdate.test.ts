@@ -29,7 +29,8 @@ describe('GigService - Gig Status Auto-Update', () => {
     status: 'open',
     applicants: [],
     createdAt: new Date(),
-    updatedAt: new Date()
+    updatedAt: new Date(),
+    workType: 'remote'
   }
 
   const mockApplication: GigApplication = {

@@ -33,7 +33,8 @@ describe('GigService - Additional Coverage', () => {
         employerName: 'Test Employer',
         status: 'open',
         applicants: [],
-        deadline: new Date('2025-12-31')
+        deadline: new Date('2025-12-31'),
+        workType: 'remote'
       }
 
       await GigService.createGig(gigData)
@@ -60,7 +61,8 @@ describe('GigService - Additional Coverage', () => {
         employerName: 'Test Employer',
         status: 'open',
         applicants: [],
-        deadline: new Date('2025-12-31')
+        deadline: new Date('2025-12-31'),
+        workType: 'remote'
       }
 
       await GigService.createGig(gigData)
@@ -89,7 +91,8 @@ describe('GigService - Additional Coverage', () => {
           applicants: [],
           createdAt: new Date(),
           updatedAt: new Date(),
-          deadline: new Date('2025-12-31')
+          deadline: new Date('2025-12-31'),
+          workType: 'remote'
         }
       ]
 
@@ -120,7 +123,8 @@ describe('GigService - Additional Coverage', () => {
       createdAt: new Date(),
       updatedAt: new Date(),
       deadline: new Date('2025-12-31'),
-      coordinates: { latitude: -26.2041, longitude: 28.0473 }
+      coordinates: { latitude: -26.2041, longitude: 28.0473 },
+      workType: 'remote'
     }
 
     it('should filter by city when city option is provided', async () => {
@@ -229,7 +233,8 @@ describe('GigService - Additional Coverage', () => {
       createdAt: new Date(),
       updatedAt: new Date(),
       deadline: new Date('2025-12-31'),
-      coordinates: mockCoords
+      coordinates: mockCoords,
+      workType: 'remote'
     }
 
     it('should filter by category when provided', async () => {
@@ -293,7 +298,8 @@ describe('GigService - Additional Coverage', () => {
       createdAt: new Date(),
       updatedAt: new Date(),
       deadline: new Date('2025-12-31'),
-      coordinates: mockCoords
+      coordinates: mockCoords,
+      workType: 'remote'
     }
 
     it('should calculate relevance score based on skills and distance', async () => {

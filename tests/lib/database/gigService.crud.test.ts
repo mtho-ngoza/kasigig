@@ -24,6 +24,7 @@ describe('GigService - CRUD Operations', () => {
     status: 'open',
     applicants: [],
     deadline: new Date('2025-12-31'),
+    workType: 'remote'
   }
 
   const mockGig: Gig = {

@@ -56,7 +56,8 @@ describe('ManageGigs', () => {
     status: 'open',
     applicants: [],
     createdAt: new Date(),
-    updatedAt: new Date()
+    updatedAt: new Date(),
+    workType: 'remote'
   }
 
   const mockInProgressGig: Gig = {
@@ -64,7 +65,8 @@ describe('ManageGigs', () => {
     id: 'gig-2',
     title: 'Cleaning Service',
     status: 'in-progress',
-    assignedTo: 'worker-123'
+    assignedTo: 'worker-123',
+    workType: 'physical'
   }
 
   const mockCompletedGig: Gig = {

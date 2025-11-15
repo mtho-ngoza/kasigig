@@ -202,7 +202,8 @@ describe('EmployerPaymentDashboard', () => {
       status: 'open' as const,
       applicants: [],
       createdAt: new Date(),
-      updatedAt: new Date()
+      updatedAt: new Date(),
+      workType: 'physical' as const
     }
 
     it('should load and display pending obligations', async () => {
@@ -490,7 +491,8 @@ describe('EmployerPaymentDashboard', () => {
         status: 'open' as const,
         applicants: [],
         createdAt: new Date(),
-        updatedAt: new Date()
+        updatedAt: new Date(),
+        workType: 'physical' as const
       }
 
       mockGigService.getGigsByEmployer.mockResolvedValue([mockGig])
@@ -555,7 +557,8 @@ describe('EmployerPaymentDashboard', () => {
         status: 'open' as const,
         applicants: [],
         createdAt: new Date(),
-        updatedAt: new Date()
+        updatedAt: new Date(),
+        workType: 'physical' as const
       }])
       mockGigService.getApplicationsByGig.mockResolvedValue([mockUnpaidApplication])
       mockGigService.getGigById.mockRejectedValue(new Error('Gig not found'))
