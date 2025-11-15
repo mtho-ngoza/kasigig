@@ -14,7 +14,7 @@ export class ReviewService {
    * Create a new review for a completed gig
    */
   static async createReview(
-    reviewData: Omit<Review, 'id' | 'createdAt'>
+    reviewData: Omit<Review, 'id' | 'createdAt' | 'isRevealed' | 'reviewDeadline' | 'counterReviewId'>
   ): Promise<string> {
     // Validate rating is between 1 and 5
     if (reviewData.rating < 1 || reviewData.rating > 5) {
