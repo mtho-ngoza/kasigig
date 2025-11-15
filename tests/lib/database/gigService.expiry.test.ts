@@ -21,7 +21,8 @@ describe('GigService Expiry Functions', () => {
     applicants: [],
     createdAt: new Date(),
     updatedAt: new Date(),
-    deadline: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) // 7 days from now
+    deadline: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days from now
+    workType: 'remote'
   }
 
   const mockApplication: Partial<GigApplication> = {

@@ -26,6 +26,7 @@ interface GigFormData {
   skillsRequired: string
   deadline: string
   maxApplicants: string
+  workType: 'remote' | 'physical' | 'hybrid'
 }
 
 const CATEGORIES = [
@@ -55,6 +56,41 @@ const DURATIONS = [
   'Ongoing'
 ]
 
+// Smart workType suggestions based on category
+const getSuggestedWorkType = (category: string): 'remote' | 'physical' | 'hybrid' => {
+  const remoteCategories = ['Technology', 'Design', 'Writing', 'Marketing']
+  const physicalCategories = ['Construction', 'Transportation', 'Cleaning', 'Healthcare']
+  const hybridCategories = ['Education', 'Finance', 'Legal']
+
+  if (remoteCategories.includes(category)) {
+    return 'remote'
+  } else if (physicalCategories.includes(category)) {
+    return 'physical'
+  } else if (hybridCategories.includes(category)) {
+    return 'hybrid'
+  }
+  return 'physical' // Default for 'Other' and unknown categories
+}
+
+// Category-specific title examples
+const getTitlePlaceholder = (category: string): string => {
+  const examples: Record<string, string> = {
+    'Technology': 'e.g., Website Development for Small Business',
+    'Design': 'e.g., Logo Design for New Restaurant',
+    'Writing': 'e.g., Blog Content Writing for Travel Website',
+    'Marketing': 'e.g., Social Media Management for Local Shop',
+    'Construction': 'e.g., Bathroom Renovation in Sandton',
+    'Transportation': 'e.g., Furniture Delivery Service - Johannesburg to Pretoria',
+    'Cleaning': 'e.g., Weekly Office Cleaning - 3 Rooms',
+    'Education': 'e.g., Mathematics Tutoring for Grade 10 Student',
+    'Healthcare': 'e.g., Home Nursing Care for Elderly Patient',
+    'Finance': 'e.g., Bookkeeping Services for Small Business',
+    'Legal': 'e.g., Contract Review and Legal Consultation',
+    'Other': 'e.g., Describe your gig clearly and specifically'
+  }
+  return examples[category] || 'e.g., Describe your gig clearly and specifically'
+}
+
 export default function PostGigForm({ editGig, onSuccess, onCancel }: PostGigFormProps) {
   const { success, error: showError } = useToast()
   const { user } = useAuth()
@@ -69,7 +105,8 @@ export default function PostGigForm({ editGig, onSuccess, onCancel }: PostGigFor
     duration: '',
     skillsRequired: '',
     deadline: '',
-    maxApplicants: ''
+    maxApplicants: '',
+    workType: 'physical' // Default to physical work
   })
 
   // Populate form when editing
@@ -84,7 +121,8 @@ export default function PostGigForm({ editGig, onSuccess, onCancel }: PostGigFor
         duration: editGig.duration,
         skillsRequired: editGig.skillsRequired.join(', '),
         deadline: editGig.deadline ? (editGig.deadline instanceof Date ? editGig.deadline.toISOString().split('T')[0] : editGig.deadline) : '',
-        maxApplicants: editGig.maxApplicants?.toString() || ''
+        maxApplicants: editGig.maxApplicants?.toString() || '',
+        workType: editGig.workType
       })
     }
   }, [editGig])
@@ -92,7 +130,7 @@ export default function PostGigForm({ editGig, onSuccess, onCancel }: PostGigFor
   // Determine if this is an informal work category
   const isInformalWork = ['Construction', 'Transportation', 'Cleaning', 'Healthcare', 'Other'].includes(formData.category)
 
-  // Get appropriate field configuration
+  // Get appropriate field configuration with category-specific skill examples
   const getSkillsConfig = () => {
     if (isInformalWork) {
       let placeholder = 'Describe what help you need'
@@ -122,9 +160,36 @@ export default function PostGigForm({ editGig, onSuccess, onCancel }: PostGigFor
         required: false
       }
     } else {
+      // Category-specific skill examples for professional/digital work
+      let placeholder = 'e.g., React, Node.js, Database Design'
+
+      switch (formData.category) {
+        case 'Technology':
+          placeholder = 'e.g., React, TypeScript, Node.js, Python, Database Design, AWS'
+          break
+        case 'Design':
+          placeholder = 'e.g., Adobe Illustrator, Figma, Photoshop, UI/UX Design, Branding'
+          break
+        case 'Writing':
+          placeholder = 'e.g., Content Writing, Copywriting, SEO, Proofreading, Research'
+          break
+        case 'Marketing':
+          placeholder = 'e.g., Social Media, Google Ads, SEO, Email Marketing, Analytics'
+          break
+        case 'Education':
+          placeholder = 'e.g., Mathematics, English, Science, Online Teaching, Curriculum Development'
+          break
+        case 'Finance':
+          placeholder = 'e.g., Bookkeeping, QuickBooks, Tax Preparation, Financial Analysis, Payroll'
+          break
+        case 'Legal':
+          placeholder = 'e.g., Contract Law, Legal Research, Compliance, Document Drafting'
+          break
+      }
+
       return {
         label: 'Skills Required',
-        placeholder: 'e.g., React, Node.js, Database Design',
+        placeholder,
         helpText: 'Separate multiple skills with commas',
         required: true
       }
@@ -134,7 +199,18 @@ export default function PostGigForm({ editGig, onSuccess, onCancel }: PostGigFor
   const skillsConfig = getSkillsConfig()
 
   const handleInputChange = (field: keyof GigFormData, value: string) => {
-    setFormData(prev => ({ ...prev, [field]: value }))
+    // Auto-update workType when category changes (smart suggestion)
+    if (field === 'category' && value) {
+      const suggestedWorkType = getSuggestedWorkType(value)
+      setFormData(prev => ({
+        ...prev,
+        [field]: value,
+        workType: suggestedWorkType
+      }))
+    } else {
+      setFormData(prev => ({ ...prev, [field]: value }))
+    }
+
     if (errors[field]) {
       setErrors(prev => ({ ...prev, [field]: '' }))
     }
@@ -237,6 +313,7 @@ export default function PostGigForm({ editGig, onSuccess, onCancel }: PostGigFor
         employerName: `${user.firstName} ${user.lastName}`,
         applicants: [],
         status: 'open' as const,
+        workType: formData.workType,
         ...(formData.deadline && { deadline: new Date(formData.deadline) }),
         ...(formData.maxApplicants.trim() && { maxApplicants: parseInt(formData.maxApplicants) })
       }
@@ -258,7 +335,8 @@ export default function PostGigForm({ editGig, onSuccess, onCancel }: PostGigFor
           duration: '',
           skillsRequired: '',
           deadline: '',
-          maxApplicants: ''
+          maxApplicants: '',
+          workType: 'physical'
         })
       }
 
@@ -292,7 +370,7 @@ export default function PostGigForm({ editGig, onSuccess, onCancel }: PostGigFor
             <Input
               id="title"
               type="text"
-              placeholder="e.g., Website Development for Small Business"
+              placeholder={formData.category ? getTitlePlaceholder(formData.category) : "e.g., Website Development for Small Business"}
               value={formData.title}
               onChange={(e) => handleInputChange('title', e.target.value)}
               className={errors.title ? 'border-red-500' : ''}
@@ -361,6 +439,21 @@ export default function PostGigForm({ editGig, onSuccess, onCancel }: PostGigFor
                 error={errors.location}
                 required
               />
+              {formData.workType === 'remote' && (
+                <p className="mt-1 text-xs text-gray-500">
+                  💡 For remote work, location helps workers find opportunities in their timezone/region
+                </p>
+              )}
+              {formData.workType === 'physical' && (
+                <p className="mt-1 text-xs text-gray-500">
+                  📍 Be specific - workers will travel to this location
+                </p>
+              )}
+              {formData.workType === 'hybrid' && (
+                <p className="mt-1 text-xs text-gray-500">
+                  🔄 Location for on-site days - specify hybrid schedule in description
+                </p>
+              )}
             </div>
           </div>
 
@@ -410,6 +503,59 @@ export default function PostGigForm({ editGig, onSuccess, onCancel }: PostGigFor
                 <p className="mt-1 text-sm text-red-600">{errors.duration}</p>
               )}
             </div>
+          </div>
+
+          {/* Work Type */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-3">
+              Work Type *
+            </label>
+            <div className="space-y-2">
+              <label className="flex items-center cursor-pointer">
+                <input
+                  type="radio"
+                  name="workType"
+                  checked={formData.workType === 'remote'}
+                  onChange={() => handleInputChange('workType', 'remote')}
+                  className="w-4 h-4 text-primary-600 focus:ring-primary-500"
+                />
+                <span className="ml-2 text-gray-700">
+                  <span className="text-sm font-medium">Remote</span>
+                  <span className="ml-1 text-xs text-gray-500">(Work from anywhere)</span>
+                </span>
+              </label>
+              <label className="flex items-center cursor-pointer">
+                <input
+                  type="radio"
+                  name="workType"
+                  checked={formData.workType === 'physical'}
+                  onChange={() => handleInputChange('workType', 'physical')}
+                  className="w-4 h-4 text-primary-600 focus:ring-primary-500"
+                />
+                <span className="ml-2 text-gray-700">
+                  <span className="text-sm font-medium">Physical</span>
+                  <span className="ml-1 text-xs text-gray-500">(On-site work)</span>
+                </span>
+              </label>
+              <label className="flex items-center cursor-pointer">
+                <input
+                  type="radio"
+                  name="workType"
+                  checked={formData.workType === 'hybrid'}
+                  onChange={() => handleInputChange('workType', 'hybrid')}
+                  className="w-4 h-4 text-primary-600 focus:ring-primary-500"
+                />
+                <span className="ml-2 text-gray-700">
+                  <span className="text-sm font-medium">Hybrid</span>
+                  <span className="ml-1 text-xs text-gray-500">(Mix of remote & on-site)</span>
+                </span>
+              </label>
+            </div>
+            {formData.category && (
+              <p className="mt-2 text-xs text-gray-500">
+                💡 Auto-suggested based on {formData.category} category. You can change this if needed.
+              </p>
+            )}
           </div>
 
           {/* Skills Required / Work Description */}

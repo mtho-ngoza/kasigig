@@ -35,7 +35,8 @@ describe('GigService - Dispute Mediation', () => {
     applicants: [],
     assignedTo: mockWorkerId,
     createdAt: new Date(),
-    updatedAt: new Date()
+    updatedAt: new Date(),
+    workType: 'remote'
   }
 
   const mockDisputedApplication: GigApplication = {

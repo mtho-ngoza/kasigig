@@ -45,6 +45,7 @@ describe('ReviewService', () => {
     assignedTo: mockReviewerId,
     createdAt: new Date(),
     updatedAt: new Date(),
+    workType: 'physical'
   }
 
   beforeEach(() => {

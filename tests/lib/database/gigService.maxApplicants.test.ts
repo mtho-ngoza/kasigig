@@ -37,7 +37,8 @@ describe('GigService - Max Applicants Feature', () => {
       applicants: [],
       maxApplicants: 5,
       createdAt: new Date(),
-      updatedAt: new Date()
+      updatedAt: new Date(),
+      workType: 'physical'
     };
 
     const mockApplicationData = {

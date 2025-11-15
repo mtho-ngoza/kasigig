@@ -34,6 +34,7 @@ describe('GigService - Recommendation Algorithm Logic', () => {
     applicants: [],
     createdAt: new Date(),
     updatedAt: new Date(),
+    workType: 'remote'
   })
 
   // Helper function to simulate the recommendation scoring logic

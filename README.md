@@ -237,8 +237,8 @@ Empower all South Africans - from informal sector workers to professionals - by 
 
 #### UX & Lifecycle
 - ✅ ~~**Gig Expiry**~~ - **COMPLETED**: Auto-cancels unfunded gigs after 7 days and overdue gigs past deadline. Includes batch processing and individual checks.
-- 💡 **Funding Timeout** - Auto-cancel accepted applications if not funded within 48 hours
-- 💡 **Work Type Clarification** - Clear Remote/Physical/Hybrid indicators
+- ✅ ~~**Funding Timeout**~~ - **COMPLETED**: Auto-cancels accepted applications if not funded within 48 hours. Includes batch processing and individual checks with 48-hour window.
+- ✅ ~~**Work Type Clarification**~~ - **COMPLETED**: Clear Remote/Physical/Hybrid indicators with visual badges, filter support, and form selectors throughout the platform.
 - 💡 **Application Limits** - Prevent spam by limiting active applications per worker (~20)
 
 #### Trust & Verification
@@ -431,6 +431,9 @@ npm run test:ci
 - Location search with autocomplete (LocationService built, needs Google Places API)
 - Enhanced verification with background checks (UI ready, marked "Coming Q2 2025")
 - Premium verification (UI ready, marked "Coming Later")
+
+**Planned UX Improvements**:
+- **Gig Posting Form Reordering**: Optimize form flow by placing Category field first, since it drives dynamic behavior for Title placeholders, Work Type suggestions, Location hints, and Skills examples. Current implementation has smart category-aware features, but form ordering could be optimized for better progressive disclosure.
 
 **Planned Features**:
 - Emergency SMS notifications (Twilio integration)

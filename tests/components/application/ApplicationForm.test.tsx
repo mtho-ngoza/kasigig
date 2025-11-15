@@ -48,7 +48,8 @@ describe('ApplicationForm - Duplicate Application Prevention', () => {
     status: 'open',
     applicants: [],
     createdAt: new Date(),
-    updatedAt: new Date()
+    updatedAt: new Date(),
+    workType: 'remote'
   }
 
   const mockSuccess = jest.fn()
@@ -201,7 +202,8 @@ describe('ApplicationForm - Duplicate Application Prevention', () => {
       ...mockGig,
       category: 'Cleaning',
       title: 'Weekly House Cleaning',
-      description: 'Need reliable cleaner for weekly house cleaning'
+      description: 'Need reliable cleaner for weekly house cleaning',
+      workType: 'physical'
     }
 
     it('should prevent duplicate application for physical work gigs', async () => {
@@ -239,7 +241,8 @@ describe('ApplicationForm - Duplicate Application Prevention', () => {
       ...mockGig,
       category: 'Construction',
       title: 'Home Renovation',
-      description: 'Need skilled builder for renovation'
+      description: 'Need skilled builder for renovation',
+      workType: 'physical'
     }
 
     it('should pre-fill experience, availability, and equipment from user profile', async () => {
