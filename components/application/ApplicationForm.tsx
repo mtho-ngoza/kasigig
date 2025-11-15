@@ -10,6 +10,7 @@ import { Gig } from '@/types/gig'
 import { useToast } from '@/contexts/ToastContext'
 import { usePayment } from '@/contexts/PaymentContext'
 import GigAmountDisplay from '@/components/gig/GigAmountDisplay'
+import { VerificationNudge } from '@/components/safety/VerificationNudge'
 
 interface ApplicationFormProps {
   gig: Gig
@@ -259,6 +260,13 @@ export default function ApplicationForm({ gig, onSuccess, onCancel }: Applicatio
               </div>
             )}
           </div>
+
+          {/* Verification Nudge for unverified job seekers */}
+          {user && !user.isVerified && (
+            <div className="mb-6">
+              <VerificationNudge variant="inline" showStats={false} />
+            </div>
+          )}
 
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Main Application Field */}

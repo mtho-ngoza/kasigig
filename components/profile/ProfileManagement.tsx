@@ -14,6 +14,7 @@ import { isInformalWorker, getProfileSectionIcon } from '@/lib/utils/userProfile
 import SafetyPreferencesManager from '@/components/safety/SafetyPreferencesManager'
 import { TrustScoreBadge, VerificationBadge } from '@/components/safety/TrustScoreBadge'
 import { RatingDisplay, ReviewList } from '@/components/review'
+import { VerificationNudge } from '@/components/safety/VerificationNudge'
 
 interface ProfileManagementProps {
   onBack?: () => void
@@ -120,6 +121,13 @@ export default function ProfileManagement({ onBack }: ProfileManagementProps) {
         <div className="mb-8">
           <ProfileCompleteness />
         </div>
+
+        {/* Verification Nudge for unverified job seekers */}
+        {user.userType === 'job-seeker' && !user.isVerified && (
+          <div className="mb-8">
+            <VerificationNudge variant="banner" showStats={true} />
+          </div>
+        )}
 
         {/* Profile Sections Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
