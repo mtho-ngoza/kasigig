@@ -22,9 +22,23 @@ const ApplicationForm = dynamic(
     ssr: false
   }
 )
+
+// Lazy load DistanceWarningDialog (only loaded when needed)
+const DistanceWarningDialog = dynamic(
+  () => import('@/components/safety/DistanceWarningDialog'),
+  {
+    loading: () => (
+      <div className="flex items-center justify-center p-8">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"></div>
+      </div>
+    ),
+    ssr: false
+  }
+)
 import { useToast } from '@/contexts/ToastContext'
 import { useLocation } from '@/contexts/LocationContext'
 import { calculateDistance, formatDistance } from '@/lib/utils/locationUtils'
+import { checkDistanceWarning, DistanceWarningInfo } from '@/lib/utils/distanceWarning'
 import GigAmountDisplay from '@/components/gig/GigAmountDisplay'
 import PaymentInfoBadge from '@/components/gig/PaymentInfoBadge'
 import { Footer } from '@/components/layout/Footer'
@@ -89,6 +103,8 @@ export default function PublicGigBrowser({
   const [selectedCategory, setSelectedCategory] = useState<string>('')
   const [selectedGig, setSelectedGig] = useState<Gig | null>(null)
   const [showApplicationForm, setShowApplicationForm] = useState(false)
+  const [showDistanceWarning, setShowDistanceWarning] = useState(false)
+  const [distanceWarningInfo, setDistanceWarningInfo] = useState<DistanceWarningInfo | null>(null)
   const [showLocationPrompt, setShowLocationPrompt] = useState(true)
   const [showNearbyOnly, setShowNearbyOnly] = useState(false)
   const [radiusKm, setRadiusKm] = useState(25)
@@ -784,7 +800,18 @@ export default function PublicGigBrowser({
     }
 
     setSelectedGig(gig)
-    setShowApplicationForm(true)
+
+    // Check if distance warning is needed for physical gigs
+    const warningInfo = checkDistanceWarning(gig, currentCoordinates)
+
+    if (warningInfo && warningInfo.shouldWarn) {
+      // Show distance warning dialog first
+      setDistanceWarningInfo(warningInfo)
+      setShowDistanceWarning(true)
+    } else {
+      // No warning needed, proceed directly to application form
+      setShowApplicationForm(true)
+    }
   }
 
   const handleApplicationSuccess = async () => {
@@ -808,6 +835,20 @@ export default function PublicGigBrowser({
 
   const handleApplicationCancel = () => {
     setShowApplicationForm(false)
+    setSelectedGig(null)
+  }
+
+  const handleDistanceWarningConfirm = () => {
+    // User confirmed they want to proceed despite distance
+    setShowDistanceWarning(false)
+    setDistanceWarningInfo(null)
+    setShowApplicationForm(true)
+  }
+
+  const handleDistanceWarningCancel = () => {
+    // User decided not to apply
+    setShowDistanceWarning(false)
+    setDistanceWarningInfo(null)
     setSelectedGig(null)
   }
 
@@ -1410,6 +1451,16 @@ export default function PublicGigBrowser({
           </div>
         </div>
       </section>
+
+      {/* Distance Warning Dialog */}
+      {showDistanceWarning && selectedGig && distanceWarningInfo && (
+        <DistanceWarningDialog
+          warningInfo={distanceWarningInfo}
+          gigTitle={selectedGig.title}
+          onConfirm={handleDistanceWarningConfirm}
+          onCancel={handleDistanceWarningCancel}
+        />
+      )}
 
       {/* Application Form Modal/Overlay */}
       {showApplicationForm && selectedGig && (
