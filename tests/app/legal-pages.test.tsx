@@ -28,7 +28,7 @@ describe('Legal Pages - Footer Presence', () => {
 
       expect(screen.getByText('Back to Home')).toBeInTheDocument()
       // Check for text-based logo
-      const logoElements = screen.getAllByText('KasiGig')
+      const logoElements = screen.getAllByText('MzansiGig')
       expect(logoElements.length).toBeGreaterThan(0)
     })
 
@@ -76,7 +76,7 @@ describe('Legal Pages - Footer Presence', () => {
 
       expect(screen.getByText('Back to Home')).toBeInTheDocument()
       // Check for text-based logo
-      const logoElements = screen.getAllByText('KasiGig')
+      const logoElements = screen.getAllByText('MzansiGig')
       expect(logoElements.length).toBeGreaterThan(0)
     })
 
@@ -126,7 +126,7 @@ describe('Legal Pages - Footer Presence', () => {
 
       expect(screen.getByText('Back to Home')).toBeInTheDocument()
       // Check for text-based logo
-      const logoElements = screen.getAllByText('KasiGig')
+      const logoElements = screen.getAllByText('MzansiGig')
       expect(logoElements.length).toBeGreaterThan(0)
     })
 
@@ -184,17 +184,17 @@ describe('Legal Pages - Footer Presence', () => {
     it('should have consistent navigation header across all legal pages', () => {
       const { unmount: unmountTerms } = render(<TermsOfService />)
       // Check for text-based logo
-      expect(screen.getAllByText('KasiGig').length).toBeGreaterThan(0)
+      expect(screen.getAllByText('MzansiGig').length).toBeGreaterThan(0)
       expect(screen.getByText('Back to Home')).toBeInTheDocument()
       unmountTerms()
 
       const { unmount: unmountPrivacy } = render(<PrivacyPolicy />)
-      expect(screen.getAllByText('KasiGig').length).toBeGreaterThan(0)
+      expect(screen.getAllByText('MzansiGig').length).toBeGreaterThan(0)
       expect(screen.getByText('Back to Home')).toBeInTheDocument()
       unmountPrivacy()
 
       render(<POPIACompliance />)
-      expect(screen.getAllByText('KasiGig').length).toBeGreaterThan(0)
+      expect(screen.getAllByText('MzansiGig').length).toBeGreaterThan(0)
       expect(screen.getByText('Back to Home')).toBeInTheDocument()
     })
 
@@ -230,7 +230,7 @@ describe('Legal Pages - Footer Presence', () => {
       render(<TermsOfService />)
 
       // Find all links pointing to home
-      const homeLinks = screen.getAllByRole('link', { name: /KasiGig|Back to Home/i })
+      const homeLinks = screen.getAllByRole('link', { name: /MzansiGig|Back to Home/i })
       const logoLink = homeLinks.find(link => link.getAttribute('href') === '/')
       expect(logoLink).toHaveAttribute('href', '/')
     })
@@ -238,7 +238,7 @@ describe('Legal Pages - Footer Presence', () => {
     it('should have working home link in Privacy header', () => {
       render(<PrivacyPolicy />)
 
-      const homeLinks = screen.getAllByRole('link', { name: /KasiGig|Back to Home/i })
+      const homeLinks = screen.getAllByRole('link', { name: /MzansiGig|Back to Home/i })
       const logoLink = homeLinks.find(link => link.getAttribute('href') === '/')
       expect(logoLink).toHaveAttribute('href', '/')
     })
@@ -246,7 +246,7 @@ describe('Legal Pages - Footer Presence', () => {
     it('should have working home link in POPIA header', () => {
       render(<POPIACompliance />)
 
-      const homeLinks = screen.getAllByRole('link', { name: /KasiGig|Back to Home/i })
+      const homeLinks = screen.getAllByRole('link', { name: /MzansiGig|Back to Home/i })
       const logoLink = homeLinks.find(link => link.getAttribute('href') === '/')
       expect(logoLink).toHaveAttribute('href', '/')
     })
