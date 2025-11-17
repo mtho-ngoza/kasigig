@@ -112,7 +112,7 @@ export default function ManageApplications({ onBack, onMessageConversationStart 
 
       // Show success message
       const actionText = status === 'accepted' ? 'accepted' : 'rejected'
-      success(`Application ${actionText} successfully!`)
+      success(`Sharp! Application ${actionText}`)
 
       // If accepted, immediately prompt for payment
       if (status === 'accepted') {
@@ -205,7 +205,7 @@ export default function ManageApplications({ onBack, onMessageConversationStart 
       )
 
       setApproveCompletionDialog({ isOpen: false, applicationId: '', gigTitle: '' })
-      success('Completion approved! Payment has been released to the worker.')
+      success('Lekker! Payment released to the worker')
     } catch (error) {
       console.error('Error approving completion:', error)
       showError(error instanceof Error ? error.message : 'Failed to approve completion. Please try again.')
@@ -251,7 +251,7 @@ export default function ManageApplications({ onBack, onMessageConversationStart 
 
       setDisputeCompletionDialog({ isOpen: false, applicationId: '', gigTitle: '' })
       setDisputeReason('')
-      success('Completion disputed. Please work with the worker to resolve the issues.')
+      success('Dispute lodged. Please work with the worker to resolve the issues')
     } catch (error) {
       console.error('Error disputing completion:', error)
       showError(error instanceof Error ? error.message : 'Failed to dispute completion. Please try again.')
@@ -809,7 +809,7 @@ export default function ManageApplications({ onBack, onMessageConversationStart 
             description={`Payment for "${showPaymentDialog.application.gigTitle}"`}
             onSuccess={async (payment) => {
               setShowPaymentDialog({ isOpen: false })
-              success('Payment processed successfully!')
+              success('Lekker! Payment processed')
 
               // Update the application payment status and change status to funded
               if (showPaymentDialog.application) {

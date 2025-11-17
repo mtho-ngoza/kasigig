@@ -836,7 +836,7 @@ export default function PublicGigBrowser({
     }
 
     setSelectedGig(null)
-    success('Application submitted successfully! You can track your applications in your dashboard.')
+    success('Sharp! Application sent. Check your dashboard to track it')
   }
 
   const handleApplicationCancel = () => {

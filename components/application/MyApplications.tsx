@@ -209,7 +209,7 @@ export default function MyApplications({ onBack, onBrowseGigs, onMessageConversa
       setCompletionRequestDialog({ isOpen: false, applicationId: '', gigTitle: '' })
 
       // Show success message
-      success('Completion requested successfully! The employer has been notified and has 7 days to respond.')
+      success('Lekker! Completion request sent. The employer has 7 days to respond')
     } catch (error) {
       console.error('Error requesting completion:', error)
       showError(error instanceof Error ? error.message : 'Failed to request completion. Please try again.')
