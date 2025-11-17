@@ -391,7 +391,7 @@ export default function ManageApplications({ onBack, onMessageConversationStart 
               </div>
 
               <h3 className="text-xl font-semibold text-gray-900 mb-4">
-                No Applications Yet
+                Eish, No Applications Yet
               </h3>
 
               <p className="text-gray-600 mb-6 max-w-md mx-auto">
@@ -480,7 +480,7 @@ export default function ManageApplications({ onBack, onMessageConversationStart 
               <Card className="text-center py-12">
                 <CardContent>
                   <p className="text-gray-600">
-                    {statusFilter === 'all' ? 'No applications received yet.' : `No applications found with status: ${statusFilter}`}
+                    {statusFilter === 'all' ? 'Eish, no applications yet. Your gig is live - workers will find it soon!' : `No ${statusFilter} applications right now`}
                   </p>
                   {statusFilter !== 'all' && (
                     <Button variant="outline" onClick={() => setStatusFilter('all')} className="mt-4">

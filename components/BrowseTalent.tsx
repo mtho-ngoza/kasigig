@@ -121,7 +121,7 @@ export default function BrowseTalent({ onBack }: BrowseTalentProps) {
   }
 
   const formatRating = (rating?: number) => {
-    if (!rating) return 'No ratings yet'
+    if (!rating) return 'No ratings yet - be the first!'
     return `${rating.toFixed(1)} ★`
   }
 
@@ -308,7 +308,7 @@ export default function BrowseTalent({ onBack }: BrowseTalentProps) {
                 </svg>
               </div>
               <h3 className="text-xl font-semibold text-gray-900 mb-2">
-                No talent profiles found
+                Eish, no talent matches yet
               </h3>
               <p className="text-gray-600 mb-4">
                 Try adjusting your filters to see more results.

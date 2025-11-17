@@ -300,7 +300,7 @@ export default function MyApplications({ onBack, onBrowseGigs, onMessageConversa
               </div>
 
               <h3 className="text-xl font-semibold text-gray-900 mb-4">
-                No Applications Yet
+                Eish, No Applications Yet
               </h3>
 
               <p className="text-gray-600 mb-6 max-w-md mx-auto">
@@ -400,7 +400,7 @@ export default function MyApplications({ onBack, onBrowseGigs, onMessageConversa
               <Card className="text-center py-12">
                 <CardContent>
                   <p className="text-gray-600">
-                    No applications found with status: <strong>{statusFilter}</strong>
+                    Eish, no <strong>{statusFilter}</strong> applications right now
                   </p>
                   <Button variant="outline" onClick={() => setStatusFilter('all')} className="mt-4">
                     Show All Applications
