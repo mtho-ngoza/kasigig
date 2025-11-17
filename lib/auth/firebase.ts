@@ -8,7 +8,7 @@ import {
   GoogleAuthProvider,
   signInWithPopup
 } from 'firebase/auth';
-import { doc, setDoc, getDoc } from 'firebase/firestore';
+import { doc, setDoc, getDoc, query, collection, where, getDocs } from 'firebase/firestore';
 import { FirebaseError } from 'firebase/app';
 import { auth, db } from '../firebase';
 import { User, LoginCredentials, RegisterData } from '@/types/auth';
@@ -17,7 +17,34 @@ import { encryptData, hashData } from '@/lib/utils/encryption';
 export class FirebaseAuthService {
   static async signUp(data: RegisterData): Promise<User> {
     try {
-      // Step 1: Create Firebase Auth user
+      // Step 1: Check for duplicate phone number
+      const phoneQuery = query(
+        collection(db, 'users'),
+        where('phone', '==', data.phone)
+      );
+      const phoneSnapshot = await getDocs(phoneQuery);
+
+      if (!phoneSnapshot.empty) {
+        throw new Error('This phone number is already registered. Please use a different number or sign in.');
+      }
+
+      // Step 2: Check for duplicate ID number (using hash)
+      if (data.idNumber) {
+        const cleanId = data.idNumber.replace(/\s/g, '');
+        const idHash = hashData(cleanId);
+
+        const idQuery = query(
+          collection(db, 'users'),
+          where('idNumberHash', '==', idHash)
+        );
+        const idSnapshot = await getDocs(idQuery);
+
+        if (!idSnapshot.empty) {
+          throw new Error('This ID number is already registered. Each ID number can only be used once.');
+        }
+      }
+
+      // Step 3: Create Firebase Auth user
       const userCredential = await createUserWithEmailAndPassword(
         auth,
         data.email,
@@ -26,12 +53,12 @@ export class FirebaseAuthService {
 
       const firebaseUser = userCredential.user;
 
-      // Step 2: Update Firebase Auth profile
+      // Step 4: Update Firebase Auth profile
       await updateProfile(firebaseUser, {
         displayName: `${data.firstName} ${data.lastName}`
       });
 
-      // Step 3: Create user document in Firestore
+      // Step 5: Create user document in Firestore
       const currentDate = new Date();
       const CONSENT_VERSION = '1.0'; // Version tracking for legal compliance
 
