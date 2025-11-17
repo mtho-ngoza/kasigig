@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { User } from '@/types/auth'
-import { UserService, TalentSearchFilters } from '@/lib/database/userService'
+import { UserService } from '@/lib/database/userService'
 import JobSeekerProfileDialog from '@/components/application/JobSeekerProfileDialog'
 
 interface BrowseTalentProps {

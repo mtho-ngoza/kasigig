@@ -5,7 +5,7 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { GigService } from '@/lib/database/gigService'
 import { useAuth } from '@/contexts/AuthContext'
-import { GigApplication, Gig } from '@/types/gig'
+import { GigApplication } from '@/types/gig'
 import { QuickMessageButton } from '@/components/messaging/QuickMessageButton'
 import { useToast } from '@/contexts/ToastContext'
 import PaymentDialog from '@/components/payment/PaymentDialog'
@@ -25,7 +25,6 @@ export default function ManageApplications({ onBack, onMessageConversationStart 
   const { success, error: showError } = useToast()
   const { user } = useAuth()
   const [applications, setApplications] = useState<ApplicationWithGig[]>([])
-  const [gigs, setGigs] = useState<Gig[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [processingApplications, setProcessingApplications] = useState<Set<string>>(new Set())
@@ -60,7 +59,6 @@ export default function ManageApplications({ onBack, onMessageConversationStart 
 
         // Get all gigs posted by this employer
         const employerGigs = await GigService.getGigsByEmployer(user.id)
-        setGigs(employerGigs)
 
         // Get all applications for these gigs
         const allApplications: ApplicationWithGig[] = []
@@ -85,7 +83,7 @@ export default function ManageApplications({ onBack, onMessageConversationStart 
         })
 
         setApplications(allApplications)
-      } catch (error) {
+      } catch {
         setError('Failed to load applications')
       } finally {
         setLoading(false)
@@ -125,7 +123,7 @@ export default function ManageApplications({ onBack, onMessageConversationStart 
         }
       }
 
-    } catch (error) {
+    } catch {
       showError('Failed to update application status. Please try again.')
     } finally {
       setProcessingApplications(prev => {
@@ -835,7 +833,7 @@ export default function ManageApplications({ onBack, onMessageConversationStart 
                         : app
                     )
                   )
-                } catch (error) {
+                } catch {
                   // Payment status update failed - payment was successful but status wasn't updated
                   // User can still proceed with the funded application
                 }

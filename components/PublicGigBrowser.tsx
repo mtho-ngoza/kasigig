@@ -1366,7 +1366,7 @@ export default function PublicGigBrowser({
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className={`text-center mb-12 transition-all duration-700 ${howItWorksInView ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-4'}`}>
             <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">How It Works</h2>
-            <p className="text-lg text-gray-600 max-w-2xl mx-auto">Let's get started - three easy steps to your first gig</p>
+            <p className="text-lg text-gray-600 max-w-2xl mx-auto">Let&apos;s get started - three easy steps to your first gig</p>
           </div>
           <div className="grid md:grid-cols-3 gap-8 md:gap-12">
             <div className={`text-center transition-all duration-700 ${howItWorksInView ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`} style={{ transitionDelay: howItWorksInView ? '0ms' : '0ms' }}>

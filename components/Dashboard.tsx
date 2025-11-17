@@ -608,7 +608,7 @@ export default function Dashboard({
               <CardContent>
                 <div className="prose max-w-none">
                   <p className="text-gray-600">
-                    Welcome to GigSA! Your Firebase integration is working perfectly.
+                    Welcome to MzansiGig!
                     Here&apos;s what you can do next:
                   </p>
                   <ul className="mt-4 space-y-2 text-gray-600">
