@@ -52,7 +52,8 @@ export interface User {
   locationPreferences?: LocationPreferences
   userType: 'job-seeker' | 'employer' | 'admin'
   workSector?: 'professional' | 'informal'
-  idNumber?: string
+  idNumber?: string // Encrypted ID number (POPIA compliance)
+  idNumberHash?: string // Hash for duplicate detection without storing plaintext
   rating?: number
   reviewCount?: number
   completedGigs?: number

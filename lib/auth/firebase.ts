@@ -12,6 +12,7 @@ import { doc, setDoc, getDoc } from 'firebase/firestore';
 import { FirebaseError } from 'firebase/app';
 import { auth, db } from '../firebase';
 import { User, LoginCredentials, RegisterData } from '@/types/auth';
+import { encryptData, hashData } from '@/lib/utils/encryption';
 
 export class FirebaseAuthService {
   static async signUp(data: RegisterData): Promise<User> {
@@ -67,8 +68,12 @@ export class FirebaseAuthService {
       if (data.workSector) {
         user.workSector = data.workSector;
       }
+
+      // Encrypt ID number and store hash for duplicate detection (POPIA compliance)
       if (data.idNumber) {
-        user.idNumber = data.idNumber;
+        const cleanId = data.idNumber.replace(/\s/g, ''); // Remove spaces
+        user.idNumber = encryptData(cleanId); // Store encrypted
+        user.idNumberHash = hashData(cleanId); // Store hash for duplicate checks
       }
 
       await setDoc(doc(db, 'users', firebaseUser.uid), user);
