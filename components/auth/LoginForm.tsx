@@ -29,9 +29,12 @@ export function LoginForm() {
   const validateForm = (): boolean => {
     const newErrors: Partial<LoginCredentials> = {}
 
-    if (!formData.email) {
+    // Sanitize email by trimming whitespace
+    const trimmedEmail = formData.email.trim()
+
+    if (!trimmedEmail) {
       newErrors.email = 'Email is required'
-    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
+    } else if (!/\S+@\S+\.\S+/.test(trimmedEmail)) {
       newErrors.email = 'Please enter a valid email'
     }
 
@@ -49,7 +52,13 @@ export function LoginForm() {
 
     if (!validateForm()) return
 
-    const result = await login(formData)
+    // Sanitize credentials before submission
+    const sanitizedCredentials: LoginCredentials = {
+      email: formData.email.trim(),
+      password: formData.password
+    }
+
+    const result = await login(sanitizedCredentials)
     setMessage({
       type: result.success ? 'success' : 'error',
       text: result.message
