@@ -47,17 +47,45 @@ export function RegisterForm() {
   const validateForm = (): boolean => {
     const newErrors: Record<string, string> = {}
 
-    if (!formData.firstName) newErrors.firstName = 'First name is required'
-    if (!formData.lastName) newErrors.lastName = 'Last name is required'
+    // Name validation with sanitization
+    const firstName = formData.firstName.trim()
+    const lastName = formData.lastName.trim()
+
+    if (!firstName) {
+      newErrors.firstName = 'First name is required'
+    } else if (!/^[a-zA-Z\s\-']+$/.test(firstName)) {
+      newErrors.firstName = 'Name can only contain letters, spaces, hyphens, and apostrophes'
+    } else if (firstName.length < 2) {
+      newErrors.firstName = 'First name must be at least 2 characters'
+    }
+
+    if (!lastName) {
+      newErrors.lastName = 'Last name is required'
+    } else if (!/^[a-zA-Z\s\-']+$/.test(lastName)) {
+      newErrors.lastName = 'Name can only contain letters, spaces, hyphens, and apostrophes'
+    } else if (lastName.length < 2) {
+      newErrors.lastName = 'Last name must be at least 2 characters'
+    }
     if (!formData.email) {
       newErrors.email = 'Email is required'
     } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
       newErrors.email = 'Please enter a valid email'
     }
+    // Strong password validation
     if (!formData.password) {
       newErrors.password = 'Password is required'
-    } else if (formData.password.length < 6) {
-      newErrors.password = 'Password must be at least 6 characters'
+    } else if (formData.password.length < 8) {
+      newErrors.password = 'Password must be at least 8 characters'
+    } else if (!/[a-z]/.test(formData.password)) {
+      newErrors.password = 'Password must contain at least one lowercase letter'
+    } else if (!/[A-Z]/.test(formData.password)) {
+      newErrors.password = 'Password must contain at least one uppercase letter'
+    } else if (!/[0-9]/.test(formData.password)) {
+      newErrors.password = 'Password must contain at least one number'
+    } else if (!/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(formData.password)) {
+      newErrors.password = 'Password must contain at least one special character'
+    } else if (/\s/.test(formData.password)) {
+      newErrors.password = 'Password cannot contain spaces'
     }
     if (formData.password !== formData.confirmPassword) {
       newErrors.confirmPassword = 'Passwords do not match'
@@ -266,15 +294,20 @@ export function RegisterForm() {
         required
       />
 
-      <Input
-        label="Password"
-        type="password"
-        name="password"
-        value={formData.password}
-        onChange={handleChange}
-        error={errors.password}
-        required
-      />
+      <div>
+        <Input
+          label="Password"
+          type="password"
+          name="password"
+          value={formData.password}
+          onChange={handleChange}
+          error={errors.password}
+          required
+        />
+        <p className="text-xs text-gray-600 mt-1">
+          Must be 8+ characters with uppercase, lowercase, number, and special character
+        </p>
+      </div>
 
       <Input
         label="Confirm Password"
