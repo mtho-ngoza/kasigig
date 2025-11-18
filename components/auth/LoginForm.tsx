@@ -8,7 +8,11 @@ import { LoginCredentials } from '@/types/auth'
 import { GoogleSignInButton } from './GoogleSignInButton'
 import { ProfileCompletionModal } from './ProfileCompletionModal'
 
-export function LoginForm() {
+interface LoginFormProps {
+  onForgotPassword?: () => void
+}
+
+export function LoginForm({ onForgotPassword }: LoginFormProps = {}) {
   const { login, loginWithGoogle, isLoading } = useAuth()
   const [formData, setFormData] = useState<LoginCredentials>({
     email: '',
@@ -149,6 +153,18 @@ export function LoginForm() {
         required
         autoComplete="current-password"
       />
+
+      {onForgotPassword && (
+        <div className="text-right">
+          <button
+            type="button"
+            onClick={onForgotPassword}
+            className="text-sm text-orange-600 hover:text-orange-500 font-medium"
+          >
+            Forgot password?
+          </button>
+        </div>
+      )}
 
       {message && (
         <div className={`p-3 rounded-md text-sm ${

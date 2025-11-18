@@ -11,6 +11,7 @@ export interface AuthContextType extends AuthState {
   logout: () => Promise<void>
   updateUser: (userData: Partial<User>) => Promise<void>
   refreshUser: () => Promise<void>
+  sendPasswordReset: (email: string) => Promise<{ success: boolean; message: string }>
 }
 
 export const AuthContext = createContext<AuthContextType | undefined>(undefined)
@@ -131,6 +132,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }
 
+  const sendPasswordReset = async (email: string): Promise<{ success: boolean; message: string }> => {
+    try {
+      await FirebaseAuthService.sendPasswordResetEmail(email)
+      return {
+        success: true,
+        message: 'Password reset email sent! Check your inbox for instructions.'
+      }
+    } catch (error: any) {
+      return {
+        success: false,
+        message: error?.message || 'Failed to send password reset email. Please try again.'
+      }
+    }
+  }
+
   const value: AuthContextType = {
     user,
     isLoading,
@@ -140,7 +156,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     register,
     logout,
     updateUser,
-    refreshUser
+    refreshUser,
+    sendPasswordReset
   }
 
   return (

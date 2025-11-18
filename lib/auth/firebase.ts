@@ -6,7 +6,8 @@ import {
   updateProfile,
   User as FirebaseUser,
   GoogleAuthProvider,
-  signInWithPopup
+  signInWithPopup,
+  sendPasswordResetEmail
 } from 'firebase/auth';
 import { doc, setDoc, getDoc, query, collection, where, getDocs } from 'firebase/firestore';
 import { FirebaseError } from 'firebase/app';
@@ -270,6 +271,25 @@ export class FirebaseAuthService {
       await setDoc(doc(db, 'users', userId), updates, { merge: true });
     } catch (error: unknown) {
       throw new Error(error instanceof Error ? error.message : 'Profile update failed');
+    }
+  }
+
+  static async sendPasswordResetEmail(email: string): Promise<void> {
+    try {
+      await sendPasswordResetEmail(auth, email);
+    } catch (error: unknown) {
+      const firebaseError = error as FirebaseError;
+
+      if (firebaseError?.code === 'auth/user-not-found') {
+        // Don't reveal if email exists or not (security)
+        return;
+      } else if (firebaseError?.code === 'auth/invalid-email') {
+        throw new Error('Please enter a valid email address.');
+      } else if (firebaseError?.code === 'auth/too-many-requests') {
+        throw new Error('Too many password reset requests. Please try again later.');
+      } else {
+        throw new Error(firebaseError?.message || 'Failed to send password reset email. Please try again.');
+      }
     }
   }
 }
