@@ -5,12 +5,14 @@ import { User, AuthState, LoginCredentials, RegisterData } from '@/types/auth'
 import { FirebaseAuthService } from '@/lib/auth/firebase'
 
 export interface AuthContextType extends AuthState {
-  login: (credentials: LoginCredentials) => Promise<{ success: boolean; message: string }>
+  login: (credentials: LoginCredentials, rememberMe?: boolean) => Promise<{ success: boolean; message: string }>
   loginWithGoogle: () => Promise<{ success: boolean; message: string; needsProfileCompletion?: boolean }>
   register: (data: RegisterData) => Promise<{ success: boolean; message: string }>
   logout: () => Promise<void>
   updateUser: (userData: Partial<User>) => Promise<void>
   refreshUser: () => Promise<void>
+  sendPasswordReset: (email: string) => Promise<{ success: boolean; message: string }>
+  resetIdleTimer: () => void
 }
 
 export const AuthContext = createContext<AuthContextType | undefined>(undefined)
@@ -23,31 +25,87 @@ export function useAuth() {
   return context
 }
 
+const IDLE_TIMEOUT = 30 * 60 * 1000 // 30 minutes in milliseconds
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [isLoading, setIsLoading] = useState(true)
+  const [idleTimer, setIdleTimer] = useState<NodeJS.Timeout | null>(null)
+
+  // Reset idle timer when user is active
+  const resetIdleTimer = () => {
+    // Only track activity if user is logged in
+    if (!user) return
+
+    // Clear existing timer
+    if (idleTimer) {
+      clearTimeout(idleTimer)
+    }
+
+    // Set new timer
+    const newTimer = setTimeout(() => {
+      // Auto-logout after idle timeout
+      logout()
+    }, IDLE_TIMEOUT)
+
+    setIdleTimer(newTimer)
+  }
 
   // Initialize auth state on mount and listen for auth changes
   useEffect(() => {
     const unsubscribe = FirebaseAuthService.onAuthStateChanged((user) => {
       setUser(user)
       setIsLoading(false)
+
+      // Start idle timer when user logs in
+      if (user) {
+        resetIdleTimer()
+      }
     })
 
     return () => unsubscribe()
   }, [])
 
-  const login = async (credentials: LoginCredentials): Promise<{ success: boolean; message: string }> => {
+  // Track user activity to reset idle timer
+  useEffect(() => {
+    if (typeof window === 'undefined' || !user) return
+
+    const activityEvents = ['mousedown', 'keydown', 'scroll', 'touchstart', 'click']
+
+    const handleActivity = () => {
+      resetIdleTimer()
+    }
+
+    // Add event listeners for user activity
+    activityEvents.forEach(event => {
+      window.addEventListener(event, handleActivity)
+    })
+
+    // Cleanup event listeners
+    return () => {
+      activityEvents.forEach(event => {
+        window.removeEventListener(event, handleActivity)
+      })
+      if (idleTimer) {
+        clearTimeout(idleTimer)
+      }
+    }
+  }, [user, idleTimer])
+
+  const login = async (credentials: LoginCredentials, rememberMe: boolean = true): Promise<{ success: boolean; message: string }> => {
     setIsLoading(true)
 
     try {
-      const user = await FirebaseAuthService.signIn(credentials)
+      const user = await FirebaseAuthService.signIn(credentials, rememberMe)
       setUser(user)
       setIsLoading(false)
+      resetIdleTimer() // Start idle timer on successful login
       return { success: true, message: 'Login successful!' }
     } catch (error: any) {
       setIsLoading(false)
-      return { success: false, message: error.message || 'An error occurred during login' }
+      // Ensure we always return a meaningful error message
+      const errorMessage = error?.message || error?.toString() || 'An error occurred during login. Please try again.'
+      return { success: false, message: errorMessage }
     }
   }
 
@@ -101,6 +159,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const logout = async () => {
     try {
+      // Clear idle timer on logout
+      if (idleTimer) {
+        clearTimeout(idleTimer)
+        setIdleTimer(null)
+      }
+
       await FirebaseAuthService.signOut()
       setUser(null)
     } catch (error) {
@@ -129,6 +193,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }
 
+  const sendPasswordReset = async (email: string): Promise<{ success: boolean; message: string }> => {
+    try {
+      await FirebaseAuthService.sendPasswordResetEmail(email)
+      return {
+        success: true,
+        message: 'Password reset email sent! Check your inbox for instructions.'
+      }
+    } catch (error: any) {
+      return {
+        success: false,
+        message: error?.message || 'Failed to send password reset email. Please try again.'
+      }
+    }
+  }
+
   const value: AuthContextType = {
     user,
     isLoading,
@@ -138,7 +217,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     register,
     logout,
     updateUser,
-    refreshUser
+    refreshUser,
+    sendPasswordReset,
+    resetIdleTimer
   }
 
   return (

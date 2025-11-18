@@ -34,7 +34,9 @@ const createMockAuthContext = (user: User | null = null): AuthContextType => ({
   register: jest.fn().mockResolvedValue({ success: true, message: 'Success' }),
   logout: jest.fn().mockResolvedValue(undefined),
   updateUser: jest.fn().mockResolvedValue(undefined),
-  refreshUser: jest.fn().mockResolvedValue(undefined)
+  refreshUser: jest.fn().mockResolvedValue(undefined),
+  sendPasswordReset: jest.fn().mockResolvedValue({ success: true, message: 'Success' }),
+  resetIdleTimer: jest.fn()
 })
 
 describe('TransactionHistory Component', () => {

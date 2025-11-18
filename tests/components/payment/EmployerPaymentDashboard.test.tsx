@@ -93,7 +93,9 @@ const mockAuthContextValue = {
   loginWithGoogle: jest.fn(),
   register: jest.fn(),
   logout: jest.fn(),
-  updateProfile: jest.fn()
+  updateProfile: jest.fn(),
+  sendPasswordReset: jest.fn(),
+  resetIdleTimer: jest.fn()
 }
 
 const renderEmployerPaymentDashboard = (props = {}) => {

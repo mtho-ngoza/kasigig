@@ -8,7 +8,11 @@ import { LoginCredentials } from '@/types/auth'
 import { GoogleSignInButton } from './GoogleSignInButton'
 import { ProfileCompletionModal } from './ProfileCompletionModal'
 
-export function LoginForm() {
+interface LoginFormProps {
+  onForgotPassword?: () => void
+}
+
+export function LoginForm({ onForgotPassword }: LoginFormProps = {}) {
   const { login, loginWithGoogle, isLoading } = useAuth()
   const [formData, setFormData] = useState<LoginCredentials>({
     email: '',
@@ -17,21 +21,41 @@ export function LoginForm() {
   const [errors, setErrors] = useState<Partial<LoginCredentials>>({})
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
   const [showProfileCompletion, setShowProfileCompletion] = useState(false)
+  const [rememberMe, setRememberMe] = useState(true)
+
+  // TODO: Error messages from failed login attempts are not displaying properly
+  // The setMessage call happens but state doesn't update - possibly related to
+  // React re-renders from AuthContext isLoading changes or StrictMode double-renders
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target
+    const previousValue = formData[name as keyof LoginCredentials]
+
     setFormData(prev => ({ ...prev, [name]: value }))
-    if (errors[name as keyof LoginCredentials]) {
-      setErrors(prev => ({ ...prev, [name]: '' }))
+
+    // Only clear messages if the value actually changed (user typed)
+    if (value !== previousValue) {
+      // Clear field-level errors
+      if (errors[name as keyof LoginCredentials]) {
+        setErrors(prev => ({ ...prev, [name]: '' }))
+      }
+
+      // Clear general error message when user starts typing
+      if (message) {
+        setMessage(null)
+      }
     }
   }
 
   const validateForm = (): boolean => {
     const newErrors: Partial<LoginCredentials> = {}
 
-    if (!formData.email) {
+    // Sanitize email by trimming whitespace
+    const trimmedEmail = formData.email.trim()
+
+    if (!trimmedEmail) {
       newErrors.email = 'Email is required'
-    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
+    } else if (!/\S+@\S+\.\S+/.test(trimmedEmail)) {
       newErrors.email = 'Please enter a valid email'
     }
 
@@ -47,13 +71,25 @@ export function LoginForm() {
     e.preventDefault()
     setMessage(null)
 
-    if (!validateForm()) return
+    if (!validateForm()) {
+      return
+    }
 
-    const result = await login(formData)
-    setMessage({
-      type: result.success ? 'success' : 'error',
-      text: result.message
-    })
+    // Sanitize credentials before submission
+    const sanitizedCredentials: LoginCredentials = {
+      email: formData.email.trim(),
+      password: formData.password
+    }
+
+    const result = await login(sanitizedCredentials, rememberMe)
+
+    // Use setTimeout to ensure state update happens after any re-renders from AuthContext
+    setTimeout(() => {
+      setMessage({
+        type: result.success ? 'success' : 'error',
+        text: result.message
+      })
+    }, 0)
   }
 
   const handleGoogleSignIn = async () => {
@@ -118,6 +154,29 @@ export function LoginForm() {
         required
         autoComplete="current-password"
       />
+
+      <div className="flex items-center justify-between">
+        <label className="flex items-center space-x-2 cursor-pointer">
+          <input
+            type="checkbox"
+            checked={rememberMe}
+            onChange={(e) => setRememberMe(e.target.checked)}
+            className="w-4 h-4 text-orange-600 border-gray-300 rounded focus:ring-orange-500"
+          />
+          <span className="text-sm text-gray-700">Remember me</span>
+        </label>
+
+        {onForgotPassword && (
+          <button
+            type="button"
+            onClick={onForgotPassword}
+            className="text-sm text-orange-600 hover:text-orange-500 font-medium"
+          >
+            Forgot password?
+          </button>
+        )}
+      </div>
+
 
       {message && (
         <div className={`p-3 rounded-md text-sm ${

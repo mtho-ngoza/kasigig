@@ -6,7 +6,11 @@ import {
   updateProfile,
   User as FirebaseUser,
   GoogleAuthProvider,
-  signInWithPopup
+  signInWithPopup,
+  sendPasswordResetEmail,
+  setPersistence,
+  browserSessionPersistence,
+  browserLocalPersistence
 } from 'firebase/auth';
 import { doc, setDoc, getDoc, query, collection, where, getDocs } from 'firebase/firestore';
 import { FirebaseError } from 'firebase/app';
@@ -126,8 +130,12 @@ export class FirebaseAuthService {
     }
   }
 
-  static async signIn(credentials: LoginCredentials): Promise<User> {
+  static async signIn(credentials: LoginCredentials, rememberMe: boolean = true): Promise<User> {
     try {
+      // Set persistence based on rememberMe option
+      // LOCAL = persist across browser sessions, SESSION = only current session
+      await setPersistence(auth, rememberMe ? browserLocalPersistence : browserSessionPersistence);
+
       // Step 1: Sign in with Firebase Auth
       const userCredential = await signInWithEmailAndPassword(
         auth,
@@ -146,12 +154,10 @@ export class FirebaseAuthService {
     } catch (error: unknown) {
       const firebaseError = error as FirebaseError;
 
-      // More specific error handling
-      if (firebaseError?.code === 'auth/user-not-found') {
-        throw new Error('No account found with this email. Please check your email or create a new account.');
-      } else if (firebaseError?.code === 'auth/wrong-password') {
-        throw new Error('Incorrect password. Please try again.');
-      } else if (firebaseError?.code === 'auth/invalid-credential') {
+      // Generic error handling for security (don't reveal account existence)
+      if (firebaseError?.code === 'auth/user-not-found' ||
+          firebaseError?.code === 'auth/wrong-password' ||
+          firebaseError?.code === 'auth/invalid-credential') {
         throw new Error('Invalid email or password. Please check your credentials and try again.');
       } else if (firebaseError?.code === 'auth/too-many-requests') {
         throw new Error('Too many failed attempts. Please wait a few minutes before trying again.');
@@ -272,6 +278,25 @@ export class FirebaseAuthService {
       await setDoc(doc(db, 'users', userId), updates, { merge: true });
     } catch (error: unknown) {
       throw new Error(error instanceof Error ? error.message : 'Profile update failed');
+    }
+  }
+
+  static async sendPasswordResetEmail(email: string): Promise<void> {
+    try {
+      await sendPasswordResetEmail(auth, email);
+    } catch (error: unknown) {
+      const firebaseError = error as FirebaseError;
+
+      if (firebaseError?.code === 'auth/user-not-found') {
+        // Don't reveal if email exists or not (security)
+        return;
+      } else if (firebaseError?.code === 'auth/invalid-email') {
+        throw new Error('Please enter a valid email address.');
+      } else if (firebaseError?.code === 'auth/too-many-requests') {
+        throw new Error('Too many password reset requests. Please try again later.');
+      } else {
+        throw new Error(firebaseError?.message || 'Failed to send password reset email. Please try again.');
+      }
     }
   }
 }
