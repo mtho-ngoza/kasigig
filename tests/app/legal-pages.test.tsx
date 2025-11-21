@@ -42,7 +42,7 @@ describe('Legal Pages - Footer Presence', () => {
     it('should have last updated date', () => {
       render(<TermsOfService />)
 
-      expect(screen.getByText(/Last Updated: January 2025/)).toBeInTheDocument()
+      expect(screen.getByText(/Last Updated: November 2025/)).toBeInTheDocument()
     })
 
     it('should have contact email', () => {
