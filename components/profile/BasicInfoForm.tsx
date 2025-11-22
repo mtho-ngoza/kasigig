@@ -69,6 +69,12 @@ export default function BasicInfoForm({ onBack }: BasicInfoFormProps) {
         ...prev,
         bio: enforceLength(value, VALIDATION_LIMITS.BIO_MAX_LENGTH)
       }))
+    } else if (field === 'firstName' || field === 'lastName') {
+      // Real-time sanitization for name fields (prevent XSS display)
+      setFormData(prev => ({
+        ...prev,
+        [field]: sanitizeText(value)
+      }))
     } else {
       setFormData(prev => ({ ...prev, [field]: value }))
     }
