@@ -10,6 +10,7 @@ import { useToast } from '@/contexts/ToastContext'
 import LocationAutocomplete from '@/components/location/LocationAutocomplete'
 import { Gig } from '@/types/gig'
 import { getMarketRateGuidance, suggestBudget, validateBudgetAgainstMinimum } from '@/lib/utils/marketRateGuidance'
+import { validateDeadline, validateBudget, validateDeadlineVsDuration, validateMaxApplicants, GIG_TEXT_LIMITS } from '@/lib/utils/gigValidation'
 
 interface PostGigFormProps {
   editGig?: Gig
@@ -98,6 +99,7 @@ export default function PostGigForm({ editGig, onSuccess, onCancel }: PostGigFor
   const { user } = useAuth()
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [errors, setErrors] = useState<Partial<GigFormData>>({})
+  const [warnings, setWarnings] = useState<Partial<Record<keyof GigFormData, string>>>({})
   const [budgetSuggestion, setBudgetSuggestion] = useState<{
     minimum: number
     recommended: number
@@ -245,46 +247,67 @@ export default function PostGigForm({ editGig, onSuccess, onCancel }: PostGigFor
 
   const validateForm = (): boolean => {
     const newErrors: Partial<GigFormData> = {}
+    const newWarnings: Partial<Record<keyof GigFormData, string>> = {}
 
+    // Title validation with max length
     if (!formData.title.trim()) {
       newErrors.title = 'Title is required'
-    } else if (formData.title.length < 10) {
-      newErrors.title = 'Title must be at least 10 characters'
+    } else if (formData.title.length < GIG_TEXT_LIMITS.TITLE_MIN) {
+      newErrors.title = `Title must be at least ${GIG_TEXT_LIMITS.TITLE_MIN} characters`
+    } else if (formData.title.length > GIG_TEXT_LIMITS.TITLE_MAX) {
+      newErrors.title = `Title cannot exceed ${GIG_TEXT_LIMITS.TITLE_MAX} characters`
     }
 
+    // Description validation with max length
     if (!formData.description.trim()) {
       newErrors.description = 'Description is required'
-    } else if (formData.description.length < 30) {
-      newErrors.description = 'Description must be at least 30 characters'
+    } else if (formData.description.length < GIG_TEXT_LIMITS.DESCRIPTION_MIN) {
+      newErrors.description = `Description must be at least ${GIG_TEXT_LIMITS.DESCRIPTION_MIN} characters`
+    } else if (formData.description.length > GIG_TEXT_LIMITS.DESCRIPTION_MAX) {
+      newErrors.description = `Description cannot exceed ${GIG_TEXT_LIMITS.DESCRIPTION_MAX} characters`
     }
 
     if (!formData.category) {
       newErrors.category = 'Category is required'
     }
 
+    // Other category description with max length
     if (formData.category === 'Other' && !formData.otherCategoryDescription.trim()) {
       newErrors.otherCategoryDescription = 'Please describe what category you need'
-    } else if (formData.otherCategoryDescription.trim() && formData.otherCategoryDescription.length < 3) {
-      newErrors.otherCategoryDescription = 'Description must be at least 3 characters'
+    } else if (formData.otherCategoryDescription.trim()) {
+      if (formData.otherCategoryDescription.length < 3) {
+        newErrors.otherCategoryDescription = 'Description must be at least 3 characters'
+      } else if (formData.otherCategoryDescription.length > GIG_TEXT_LIMITS.OTHER_CATEGORY_MAX) {
+        newErrors.otherCategoryDescription = `Description cannot exceed ${GIG_TEXT_LIMITS.OTHER_CATEGORY_MAX} characters`
+      }
     }
 
     if (!formData.location) {
       newErrors.location = 'Location is required'
     }
 
+    // Budget validation with max limit and warnings
     if (!formData.budget.trim()) {
       newErrors.budget = 'Budget is required'
     } else {
       const budgetNum = parseFloat(formData.budget)
       if (isNaN(budgetNum) || budgetNum <= 0) {
         newErrors.budget = 'Budget must be a valid positive number'
-      } else if (budgetNum < 100) {
-        newErrors.budget = 'Budget must be at least R100'
-      } else if (formData.category && formData.duration) {
-        // Validate against minimum wage for category
-        const validation = validateBudgetAgainstMinimum(budgetNum, formData.category, formData.duration)
-        if (!validation.isValid) {
-          newErrors.budget = `Budget is below minimum wage. Minimum: R${validation.minimumRequired.toFixed(0)}`
+      } else {
+        // Check budget limits (min/max)
+        const budgetValidation = validateBudget(budgetNum)
+        if (!budgetValidation.isValid) {
+          newErrors.budget = budgetValidation.message
+        } else if (budgetValidation.warning) {
+          newWarnings.budget = budgetValidation.warning
+        }
+
+        // Also check against minimum wage for category
+        if (formData.category && formData.duration && !newErrors.budget) {
+          const minWageValidation = validateBudgetAgainstMinimum(budgetNum, formData.category, formData.duration)
+          if (!minWageValidation.isValid) {
+            newErrors.budget = `Budget is below minimum wage. Minimum: R${minWageValidation.minimumRequired.toFixed(0)}`
+          }
         }
       }
     }
@@ -301,14 +324,29 @@ export default function PostGigForm({ editGig, onSuccess, onCancel }: PostGigFor
     // Validate max applicants (optional, but must be valid positive integer if provided)
     if (formData.maxApplicants.trim()) {
       const maxApplicants = parseInt(formData.maxApplicants)
-      if (isNaN(maxApplicants) || maxApplicants <= 0) {
-        newErrors.maxApplicants = 'Max applicants must be a positive number'
-      } else if (maxApplicants > 100) {
-        newErrors.maxApplicants = 'Max applicants cannot exceed 100'
+      const maxApplicantsValidation = validateMaxApplicants(maxApplicants)
+      if (!maxApplicantsValidation.isValid) {
+        newErrors.maxApplicants = maxApplicantsValidation.message
+      }
+    }
+
+    // Deadline validation (optional, but must be valid if provided)
+    if (formData.deadline) {
+      const deadlineDate = new Date(formData.deadline)
+      const deadlineValidation = validateDeadline(deadlineDate)
+      if (!deadlineValidation.isValid) {
+        newErrors.deadline = deadlineValidation.message
+      } else if (formData.duration) {
+        // Check if deadline aligns with duration
+        const alignmentCheck = validateDeadlineVsDuration(deadlineDate, formData.duration)
+        if (alignmentCheck.isWarning) {
+          newWarnings.deadline = alignmentCheck.message
+        }
       }
     }
 
     setErrors(newErrors)
+    setWarnings(newWarnings)
     return Object.keys(newErrors).length === 0
   }
 
@@ -441,6 +479,7 @@ export default function PostGigForm({ editGig, onSuccess, onCancel }: PostGigFor
                 value={formData.otherCategoryDescription}
                 onChange={(e) => handleInputChange('otherCategoryDescription', e.target.value)}
                 className={errors.otherCategoryDescription ? 'border-red-500' : ''}
+                maxLength={GIG_TEXT_LIMITS.OTHER_CATEGORY_MAX}
               />
               {errors.otherCategoryDescription && (
                 <p className="mt-1 text-sm text-red-600">{errors.otherCategoryDescription}</p>
@@ -463,10 +502,14 @@ export default function PostGigForm({ editGig, onSuccess, onCancel }: PostGigFor
               value={formData.title}
               onChange={(e) => handleInputChange('title', e.target.value)}
               className={errors.title ? 'border-red-500' : ''}
+              maxLength={GIG_TEXT_LIMITS.TITLE_MAX}
             />
             {errors.title && (
               <p className="mt-1 text-sm text-red-600">{errors.title}</p>
             )}
+            <p className="mt-1 text-sm text-gray-500">
+              {formData.title.length}/{GIG_TEXT_LIMITS.TITLE_MAX} characters
+            </p>
           </div>
 
           {/* Description */}
@@ -480,6 +523,7 @@ export default function PostGigForm({ editGig, onSuccess, onCancel }: PostGigFor
               placeholder="Describe your project requirements, expectations, deliverables, and any specific instructions..."
               value={formData.description}
               onChange={(e) => handleInputChange('description', e.target.value)}
+              maxLength={GIG_TEXT_LIMITS.DESCRIPTION_MAX}
               className={`w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-primary-500 focus:border-transparent ${
                 errors.description ? 'border-red-500' : ''
               }`}
@@ -488,7 +532,7 @@ export default function PostGigForm({ editGig, onSuccess, onCancel }: PostGigFor
               <p className="mt-1 text-sm text-red-600">{errors.description}</p>
             )}
             <p className="mt-1 text-sm text-gray-500">
-              {formData.description.length}/500 characters (minimum 30)
+              {formData.description.length}/{GIG_TEXT_LIMITS.DESCRIPTION_MAX} characters (minimum {GIG_TEXT_LIMITS.DESCRIPTION_MIN})
             </p>
           </div>
 
@@ -565,6 +609,9 @@ export default function PostGigForm({ editGig, onSuccess, onCancel }: PostGigFor
               </div>
               {errors.budget && (
                 <p className="mt-1 text-sm text-red-600">{errors.budget}</p>
+              )}
+              {!errors.budget && warnings.budget && (
+                <p className="mt-1 text-sm text-yellow-600">⚠️ {warnings.budget}</p>
               )}
 
               {/* Market Rate Guidance */}
@@ -686,10 +733,19 @@ export default function PostGigForm({ editGig, onSuccess, onCancel }: PostGigFor
                 value={formData.deadline}
                 onChange={(e) => handleInputChange('deadline', e.target.value)}
                 min={new Date().toISOString().split('T')[0]}
+                className={errors.deadline ? 'border-red-500' : ''}
               />
-              <p className="mt-1 text-sm text-gray-500">
-                When should applications close?
-              </p>
+              {errors.deadline && (
+                <p className="mt-1 text-sm text-red-600">{errors.deadline}</p>
+              )}
+              {!errors.deadline && warnings.deadline && (
+                <p className="mt-1 text-sm text-yellow-600">⚠️ {warnings.deadline}</p>
+              )}
+              {!errors.deadline && !warnings.deadline && (
+                <p className="mt-1 text-sm text-gray-500">
+                  When should applications close?
+                </p>
+              )}
             </div>
 
             <div>
