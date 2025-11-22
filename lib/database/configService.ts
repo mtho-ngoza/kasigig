@@ -201,7 +201,12 @@ export class ConfigService {
    * Get configuration change history (admin only)
    * Returns audit log entries
    */
-  static async getAuditLog(limit: number = 50): Promise<any[]> {
+  static async getAuditLog(_limit: number = 50): Promise<Array<{
+    adminUserId: string
+    changes: Partial<Omit<PlatformConfig, 'id' | 'updatedAt' | 'updatedBy'>>
+    timestamp: Date
+    action: string
+  }>> {
     try {
       // This would need a query implementation in FirestoreService
       // For now, return empty array as placeholder
