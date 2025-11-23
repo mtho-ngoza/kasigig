@@ -17,6 +17,13 @@ import {
   ConversationParticipant,
   MessageInput
 } from '@/types/messaging';
+import {
+  sanitizeMessageContent,
+  sanitizeUsername,
+  validateMessageSubmission,
+  messageRateLimiter,
+  MESSAGE_LIMITS
+} from '@/lib/utils/messageValidation';
 
 export class MessagingService {
   // Conversation operations
@@ -176,12 +183,54 @@ export class MessagingService {
     messageInput: MessageInput
   ): Promise<string> {
     try {
+      // Verify conversation exists and check status
+      const conversation = await this.getConversationById(conversationId);
+      if (!conversation) {
+        throw new Error('Conversation not found');
+      }
+
+      // Check if conversation is blocked
+      if (conversation.status === 'blocked') {
+        throw new Error('Cannot send messages to blocked conversations');
+      }
+
+      // Verify sender is a participant
+      const isParticipant = conversation.participants.some(p => p.userId === senderId);
+      if (!isParticipant) {
+        throw new Error('User is not a participant in this conversation');
+      }
+
+      // Check rate limiting
+      const rateLimitCheck = messageRateLimiter.canSendMessage(senderId);
+      if (!rateLimitCheck.allowed) {
+        const waitSeconds = Math.ceil((rateLimitCheck.retryAfterMs || 0) / 1000);
+        throw new Error(`Rate limit exceeded. Please wait ${waitSeconds} seconds before sending another message`);
+      }
+
+      // Validate message content
+      const validation = validateMessageSubmission(messageInput.content);
+      if (!validation.isValid) {
+        const errorMessage = Object.values(validation.errors).join('; ');
+        throw new Error(`Invalid message: ${errorMessage}`);
+      }
+
+      // Sanitize message content
+      const sanitizedContent = sanitizeMessageContent(messageInput.content, MESSAGE_LIMITS.CONTENT_MAX);
+
+      // Fetch actual sender name from user database instead of trusting client
+      const senderUser = await FirestoreService.getById<{ name: string; userType: string }>(
+        'users',
+        senderId
+      );
+      const verifiedSenderName = senderUser ? sanitizeUsername(senderUser.name) : sanitizeUsername(senderName);
+      const verifiedSenderType = (senderUser?.userType as 'job-seeker' | 'employer' | 'admin') || senderType;
+
       const messageData: Omit<Message, 'id'> = {
         conversationId,
         senderId,
-        senderName,
-        senderType,
-        content: messageInput.content,
+        senderName: verifiedSenderName,
+        senderType: verifiedSenderType,
+        content: sanitizedContent,
         type: messageInput.type,
         isRead: false,
         createdAt: new Date(),
@@ -196,24 +245,24 @@ export class MessagingService {
 
       const messageId = await FirestoreService.create('messages', messageData);
 
-      // Update conversation with last message and increment unread counts
-      const conversation = await this.getConversationById(conversationId);
-      if (conversation) {
-        const unreadUpdates: { [userId: string]: number } = {};
-        conversation.participants.forEach(participant => {
-          if (participant.userId !== senderId) {
-            unreadUpdates[participant.userId] = (conversation.unreadCount[participant.userId] || 0) + 1;
-          } else {
-            unreadUpdates[participant.userId] = conversation.unreadCount[participant.userId] || 0;
-          }
-        });
+      // Record message for rate limiting
+      messageRateLimiter.recordMessage(senderId);
 
-        await FirestoreService.update('conversations', conversationId, {
-          lastMessage: { ...messageData, id: messageId },
-          lastMessageAt: new Date(),
-          unreadCount: unreadUpdates
-        });
-      }
+      // Update conversation with last message and increment unread counts
+      const unreadUpdates: { [userId: string]: number } = {};
+      conversation.participants.forEach(participant => {
+        if (participant.userId !== senderId) {
+          unreadUpdates[participant.userId] = (conversation.unreadCount[participant.userId] || 0) + 1;
+        } else {
+          unreadUpdates[participant.userId] = conversation.unreadCount[participant.userId] || 0;
+        }
+      });
+
+      await FirestoreService.update('conversations', conversationId, {
+        lastMessage: { ...messageData, id: messageId },
+        lastMessageAt: new Date(),
+        unreadCount: unreadUpdates
+      });
 
       return messageId;
     } catch (error: unknown) {
@@ -228,12 +277,15 @@ export class MessagingService {
     metadata?: Message['metadata']
   ): Promise<string> {
     try {
+      // Sanitize system message content
+      const sanitizedContent = sanitizeMessageContent(content, MESSAGE_LIMITS.CONTENT_MAX);
+
       const messageData: Omit<Message, 'id'> = {
         conversationId,
         senderId: 'system',
         senderName: 'System',
         senderType: 'job-seeker', // Default, not relevant for system messages
-        content,
+        content: sanitizedContent,
         type,
         metadata,
         isRead: false,
