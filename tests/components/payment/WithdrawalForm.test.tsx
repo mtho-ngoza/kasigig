@@ -48,6 +48,7 @@ const mockPaymentContextValue = {
   error: null,
   addPaymentMethod: jest.fn(),
   setDefaultPaymentMethod: jest.fn(),
+  deletePaymentMethod: jest.fn(),
   refreshPaymentMethods: jest.fn(),
   createPaymentIntent: jest.fn(),
   processPayment: jest.fn(),
