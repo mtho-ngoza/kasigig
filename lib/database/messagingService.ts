@@ -154,7 +154,16 @@ export class MessagingService {
     try {
       return await FirestoreService.getById<Conversation>('conversations', conversationId);
     } catch (error: unknown) {
-      throw new Error(`Error getting conversation: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      // If conversation doesn't exist or user doesn't have permission, return null instead of throwing
+      // This is expected behavior when there's no active conversation
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      if (errorMessage.includes('Missing or insufficient permissions') ||
+          errorMessage.includes('not found') ||
+          errorMessage.includes('does not exist')) {
+        return null;
+      }
+      // For unexpected errors, still throw
+      throw new Error(`Error getting conversation: ${errorMessage}`);
     }
   }
 
