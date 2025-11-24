@@ -1,6 +1,7 @@
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage'
 import { v4 as uuidv4 } from 'uuid'
 import { storage } from '@/lib/firebase'
+import { sanitizeFilename, validateFileExtension } from '@/lib/utils/messageValidation'
 
 export interface FileUploadResult {
   fileName: string
@@ -12,19 +13,36 @@ export class FileService {
   static async uploadMessageFile(
     userId: string,
     conversationId: string,
+    messageId: string,
     file: File
   ): Promise<FileUploadResult> {
     try {
-      // Validate file size (max 10MB)
-      const maxSize = 10 * 1024 * 1024 // 10MB
+      // Validate file size (max 25MB to match storage rules)
+      const maxSize = 25 * 1024 * 1024 // 25MB
       if (file.size > maxSize) {
-        throw new Error('File size must be less than 10MB')
+        throw new Error('File size must be less than 25MB')
       }
 
-      // Generate unique filename
-      const fileExtension = file.name.split('.').pop()
-      const fileName = `${conversationId}-${uuidv4()}.${fileExtension}`
-      const storageRef = ref(storage, `message-files/${fileName}`)
+      // Validate file type against whitelist
+      if (!this.isValidFileType(file)) {
+        throw new Error('File type not allowed. Please upload an image, document, or archive file.')
+      }
+
+      // Validate file extension
+      const extensionValidation = validateFileExtension(file.name)
+      if (!extensionValidation.isValid) {
+        throw new Error(extensionValidation.message || 'Invalid file extension')
+      }
+
+      // Sanitize filename to prevent path traversal and XSS
+      const sanitizedOriginalName = sanitizeFilename(file.name)
+
+      // Generate unique filename preserving extension
+      const fileExtension = file.name.split('.').pop()?.toLowerCase() || ''
+      const uniqueFileName = `${uuidv4()}.${fileExtension}`
+
+      // Use path structure matching storage.rules: messages/{conversationId}/{messageId}/{fileName}
+      const storageRef = ref(storage, `messages/${conversationId}/${messageId}/${uniqueFileName}`)
 
       // Add metadata
       const metadata = {
@@ -32,7 +50,8 @@ export class FileService {
         customMetadata: {
           'uploadedBy': userId,
           'conversationId': conversationId,
-          'originalName': file.name
+          'messageId': messageId,
+          'originalName': sanitizedOriginalName
         }
       }
 
@@ -41,7 +60,7 @@ export class FileService {
       const downloadURL = await getDownloadURL(storageRef)
 
       return {
-        fileName: file.name,
+        fileName: sanitizedOriginalName,
         fileUrl: downloadURL,
         fileSize: file.size
       }

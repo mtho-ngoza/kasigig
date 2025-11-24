@@ -1,3 +1,36 @@
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage'
+import { v4 as uuidv4 } from 'uuid'
+
+// Mock Firebase lib
+jest.mock('@/lib/firebase', () => ({
+  storage: {},
+}))
+
+// Mock Firebase storage
+jest.mock('firebase/storage', () => ({
+  ref: jest.fn(),
+  uploadBytes: jest.fn(),
+  getDownloadURL: jest.fn(),
+}))
+
+// Mock uuid
+jest.mock('uuid', () => ({
+  v4: jest.fn(),
+}))
+
+// Mock messageValidation
+jest.mock('@/lib/utils/messageValidation', () => ({
+  sanitizeFilename: jest.fn((filename) => filename.replace(/[<>:"\/\\|?*]/g, '_')),
+  validateFileExtension: jest.fn((filename) => {
+    const validExtensions = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'pdf', 'doc', 'docx', 'txt', 'zip']
+    const ext = filename.split('.').pop()?.toLowerCase()
+    return ext && validExtensions.includes(ext)
+      ? { isValid: true }
+      : { isValid: false, message: `File type .${ext} is not allowed` }
+  }),
+}))
+
+// Import after mocks
 import { FileService } from '@/lib/database/fileService'
 
 describe('FileService', () => {
@@ -383,6 +416,245 @@ describe('FileService', () => {
 
           // Then
           expect(result).toBe(false)
+        })
+      })
+    })
+  })
+
+  describe('uploadMessageFile', () => {
+    const mockUserId = 'user-123'
+    const mockConversationId = 'conv-456'
+    const mockMessageId = 'msg-789'
+    const mockUuid = 'uuid-abc-def'
+    const mockDownloadUrl = 'https://storage.googleapis.com/bucket/path/to/file.jpg'
+
+    beforeEach(() => {
+      // Reset mocks
+      jest.clearAllMocks()
+
+      // Setup default mock implementations
+      jest.mocked(uuidv4).mockReturnValue(mockUuid)
+      jest.mocked(ref).mockReturnValue({ fullPath: 'mock-path' } as any)
+      jest.mocked(uploadBytes).mockResolvedValue({} as any)
+      jest.mocked(getDownloadURL).mockResolvedValue(mockDownloadUrl)
+    })
+
+    describe('given valid file', () => {
+      describe('when uploading message file', () => {
+        it('then uploads to correct path matching storage rules', async () => {
+          // Given
+          const file = new File(['content'], 'document.pdf', { type: 'application/pdf' })
+          Object.defineProperty(file, 'size', { value: 1024 * 1024 }) // 1MB
+
+          // When
+          await FileService.uploadMessageFile(mockUserId, mockConversationId, mockMessageId, file)
+
+          // Then
+          expect(ref).toHaveBeenCalledWith(
+            expect.anything(),
+            `messages/${mockConversationId}/${mockMessageId}/${mockUuid}.pdf`
+          )
+        })
+
+        it('then includes correct metadata', async () => {
+          // Given
+          const file = new File(['content'], 'photo.jpg', { type: 'image/jpeg' })
+          Object.defineProperty(file, 'size', { value: 1024 * 1024 })
+
+          // When
+          await FileService.uploadMessageFile(mockUserId, mockConversationId, mockMessageId, file)
+
+          // Then
+          expect(uploadBytes).toHaveBeenCalledWith(
+            expect.anything(),
+            file,
+            expect.objectContaining({
+              contentType: 'image/jpeg',
+              customMetadata: {
+                uploadedBy: mockUserId,
+                conversationId: mockConversationId,
+                messageId: mockMessageId,
+                originalName: 'photo.jpg'
+              }
+            })
+          )
+        })
+
+        it('then returns file data with sanitized filename', async () => {
+          // Given
+          const file = new File(['content'], 'my-document.pdf', { type: 'application/pdf' })
+          Object.defineProperty(file, 'size', { value: 2048 })
+
+          // When
+          const result = await FileService.uploadMessageFile(mockUserId, mockConversationId, mockMessageId, file)
+
+          // Then
+          expect(result).toEqual({
+            fileName: 'my-document.pdf',
+            fileUrl: mockDownloadUrl,
+            fileSize: 2048
+          })
+        })
+      })
+    })
+
+    describe('given file with dangerous filename', () => {
+      describe('when uploading message file', () => {
+        it('then sanitizes filename in metadata', async () => {
+          // Given
+          const file = new File(['content'], '../../../etc/passwd.txt', { type: 'text/plain' })
+          Object.defineProperty(file, 'size', { value: 1024 })
+
+          // When
+          await FileService.uploadMessageFile(mockUserId, mockConversationId, mockMessageId, file)
+
+          // Then - sanitizeFilename should be called and unsafe characters removed
+          const metadata = jest.mocked(uploadBytes).mock.calls[0][2]
+          // Original filename had slashes and dots which should be replaced with underscores
+          expect(metadata?.customMetadata?.originalName).toBe('.._.._.._etc_passwd.txt')
+          // Verify it doesn't contain actual path separators
+          expect(metadata?.customMetadata?.originalName).not.toContain('/')
+          expect(metadata?.customMetadata?.originalName).not.toContain('\\')
+        })
+      })
+    })
+
+    describe('given file exceeding size limit', () => {
+      describe('when uploading message file', () => {
+        it('then throws error', async () => {
+          // Given
+          const file = new File(['content'], 'large-file.pdf', { type: 'application/pdf' })
+          Object.defineProperty(file, 'size', { value: 26 * 1024 * 1024 }) // 26MB (over 25MB limit)
+
+          // When / Then
+          await expect(
+            FileService.uploadMessageFile(mockUserId, mockConversationId, mockMessageId, file)
+          ).rejects.toThrow('File size must be less than 25MB')
+        })
+      })
+    })
+
+    describe('given file at size limit boundary', () => {
+      describe('when uploading message file', () => {
+        it('then accepts exactly 25MB', async () => {
+          // Given
+          const file = new File(['content'], 'max-size.pdf', { type: 'application/pdf' })
+          Object.defineProperty(file, 'size', { value: 25 * 1024 * 1024 }) // Exactly 25MB
+
+          // When
+          const result = await FileService.uploadMessageFile(mockUserId, mockConversationId, mockMessageId, file)
+
+          // Then
+          expect(result).toBeDefined()
+          expect(uploadBytes).toHaveBeenCalled()
+        })
+      })
+    })
+
+    describe('given invalid file type', () => {
+      describe('when uploading message file', () => {
+        it('then throws error for executable', async () => {
+          // Given
+          const file = new File(['content'], 'malware.exe', { type: 'application/x-msdownload' })
+          Object.defineProperty(file, 'size', { value: 1024 })
+
+          // When / Then
+          await expect(
+            FileService.uploadMessageFile(mockUserId, mockConversationId, mockMessageId, file)
+          ).rejects.toThrow('File type not allowed')
+        })
+
+        it('then throws error for script file', async () => {
+          // Given
+          const file = new File(['content'], 'script.js', { type: 'application/javascript' })
+          Object.defineProperty(file, 'size', { value: 1024 })
+
+          // When / Then
+          await expect(
+            FileService.uploadMessageFile(mockUserId, mockConversationId, mockMessageId, file)
+          ).rejects.toThrow('File type not allowed')
+        })
+      })
+    })
+
+    describe('given invalid file extension', () => {
+      describe('when uploading message file', () => {
+        it('then throws error for .exe extension', async () => {
+          // Given
+          const file = new File(['content'], 'program.exe', { type: 'application/pdf' })
+          Object.defineProperty(file, 'size', { value: 1024 })
+
+          // When / Then
+          await expect(
+            FileService.uploadMessageFile(mockUserId, mockConversationId, mockMessageId, file)
+          ).rejects.toThrow()
+        })
+      })
+    })
+
+    describe('given uppercase file extension', () => {
+      describe('when uploading message file', () => {
+        it('then normalizes to lowercase in storage path', async () => {
+          // Given
+          const file = new File(['content'], 'PHOTO.JPG', { type: 'image/jpeg' })
+          Object.defineProperty(file, 'size', { value: 1024 })
+
+          // When
+          await FileService.uploadMessageFile(mockUserId, mockConversationId, mockMessageId, file)
+
+          // Then - extension should be lowercase in path
+          expect(ref).toHaveBeenCalledWith(
+            expect.anything(),
+            expect.stringContaining('.jpg')
+          )
+        })
+      })
+    })
+
+    describe('given storage upload fails', () => {
+      describe('when uploading message file', () => {
+        it('then throws descriptive error', async () => {
+          // Given
+          const file = new File(['content'], 'photo.jpg', { type: 'image/jpeg' })
+          Object.defineProperty(file, 'size', { value: 1024 })
+          jest.mocked(uploadBytes).mockRejectedValueOnce(new Error('Network error'))
+
+          // When / Then
+          await expect(
+            FileService.uploadMessageFile(mockUserId, mockConversationId, mockMessageId, file)
+          ).rejects.toThrow('Network error')
+        })
+      })
+    })
+
+    describe('given multiple files uploaded to same message', () => {
+      describe('when uploading message files', () => {
+        it('then generates unique filenames for each', async () => {
+          // Given
+          const file1 = new File(['content1'], 'photo.jpg', { type: 'image/jpeg' })
+          const file2 = new File(['content2'], 'photo.jpg', { type: 'image/jpeg' })
+          Object.defineProperty(file1, 'size', { value: 1024 })
+          Object.defineProperty(file2, 'size', { value: 1024 })
+
+          jest.mocked(uuidv4)
+            .mockReturnValueOnce('uuid-1')
+            .mockReturnValueOnce('uuid-2')
+
+          // When
+          await FileService.uploadMessageFile(mockUserId, mockConversationId, mockMessageId, file1)
+          await FileService.uploadMessageFile(mockUserId, mockConversationId, mockMessageId, file2)
+
+          // Then
+          expect(ref).toHaveBeenNthCalledWith(
+            1,
+            expect.anything(),
+            `messages/${mockConversationId}/${mockMessageId}/uuid-1.jpg`
+          )
+          expect(ref).toHaveBeenNthCalledWith(
+            2,
+            expect.anything(),
+            `messages/${mockConversationId}/${mockMessageId}/uuid-2.jpg`
+          )
         })
       })
     })

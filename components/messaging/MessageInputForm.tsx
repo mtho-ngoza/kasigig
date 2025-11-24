@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useState, useRef, useCallback } from 'react'
+import { v4 as uuidv4 } from 'uuid'
 import { MessageInput } from '@/types/messaging'
 import { Button } from '@/components/ui/Button'
 import { FileService } from '@/lib/database/fileService'
@@ -128,8 +129,11 @@ export function MessageInputForm({
     try {
       setIsUploading(true)
 
+      // Generate messageId before uploading (needed for storage path)
+      const messageId = uuidv4()
+
       // Upload file to Firebase Storage
-      const fileData = await FileService.uploadMessageFile(user.id, conversationId, file)
+      const fileData = await FileService.uploadMessageFile(user.id, conversationId, messageId, file)
 
       // Send file message
       const messageInput: MessageInput = {
