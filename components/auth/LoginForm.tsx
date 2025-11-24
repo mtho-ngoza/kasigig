@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
@@ -19,13 +19,13 @@ export function LoginForm({ onForgotPassword }: LoginFormProps = {}) {
     password: '',
   })
   const [errors, setErrors] = useState<Partial<LoginCredentials>>({})
+  // TODO: Error messages may not display consistently after login attempts
+  // Tests pass but issue persists in production - likely related to AuthContext redirect/unmount timing
+  // Need to investigate AuthContext login flow to ensure message displays before any navigation
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
   const [showProfileCompletion, setShowProfileCompletion] = useState(false)
   const [rememberMe, setRememberMe] = useState(true)
 
-  // TODO: Error messages from failed login attempts are not displaying properly
-  // The setMessage call happens but state doesn't update - possibly related to
-  // React re-renders from AuthContext isLoading changes or StrictMode double-renders
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target
@@ -83,13 +83,11 @@ export function LoginForm({ onForgotPassword }: LoginFormProps = {}) {
 
     const result = await login(sanitizedCredentials, rememberMe)
 
-    // Use setTimeout to ensure state update happens after any re-renders from AuthContext
-    setTimeout(() => {
-      setMessage({
-        type: result.success ? 'success' : 'error',
-        text: result.message
-      })
-    }, 0)
+    // Display result message directly
+    setMessage({
+      type: result.success ? 'success' : 'error',
+      text: result.message
+    })
   }
 
   const handleGoogleSignIn = async () => {
@@ -99,6 +97,7 @@ export function LoginForm({ onForgotPassword }: LoginFormProps = {}) {
     if (result.success && result.needsProfileCompletion) {
       setShowProfileCompletion(true)
     } else {
+      // Display result message directly
       setMessage({
         type: result.success ? 'success' : 'error',
         text: result.message
