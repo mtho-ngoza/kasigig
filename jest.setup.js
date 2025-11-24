@@ -1,11 +1,6 @@
 // Learn more: https://github.com/testing-library/jest-dom
 import '@testing-library/jest-dom'
 
-// Mock uuid
-jest.mock('uuid', () => ({
-  v4: () => 'test-uuid-1234',
-}))
-
 // Mock Firebase
 jest.mock('firebase/app', () => ({
   initializeApp: jest.fn(),

@@ -1,6 +1,6 @@
-// @ts-nocheck
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage'
 import { v4 as uuidv4 } from 'uuid'
+import { FileService } from '@/lib/database/fileService'
 
 // Mock Firebase lib
 jest.mock('@/lib/firebase', () => ({
@@ -14,9 +14,9 @@ jest.mock('firebase/storage', () => ({
   getDownloadURL: jest.fn(),
 }))
 
-// Mock uuid
+// Mock uuid with jest.fn() directly in factory
 jest.mock('uuid', () => ({
-  v4: jest.fn(() => 'mock-uuid'),
+  v4: jest.fn(),
 }))
 
 // Mock messageValidation
@@ -30,9 +30,6 @@ jest.mock('@/lib/utils/messageValidation', () => ({
       : { isValid: false, message: `File type .${ext} is not allowed` }
   }),
 }))
-
-// Import after mocks
-import { FileService } from '@/lib/database/fileService'
 
 describe('FileService', () => {
   describe('formatFileSize', () => {
@@ -430,13 +427,16 @@ describe('FileService', () => {
     const mockDownloadUrl = 'https://storage.googleapis.com/bucket/path/to/file.jpg'
 
     beforeEach(() => {
-      // Reset mocks
-      jest.clearAllMocks()
+      // Clear mock call history
+      (uuidv4 as jest.Mock).mockClear();
+      jest.mocked(ref).mockClear();
+      jest.mocked(uploadBytes).mockClear();
+      jest.mocked(getDownloadURL).mockClear();
 
       // Setup default mock implementations
-      (uuidv4 as jest.Mock).mockReturnValue(mockUuid)
-      jest.mocked(ref).mockReturnValue({ fullPath: 'mock-path' } as any)
-      jest.mocked(uploadBytes).mockResolvedValue({} as any)
+      (uuidv4 as jest.Mock).mockReturnValue(mockUuid);
+      jest.mocked(ref).mockReturnValue({ fullPath: 'mock-path' } as any);
+      jest.mocked(uploadBytes).mockResolvedValue({} as any);
       jest.mocked(getDownloadURL).mockResolvedValue(mockDownloadUrl)
     })
 
@@ -632,25 +632,26 @@ describe('FileService', () => {
       describe('when uploading message files', () => {
         it('then generates unique filenames for each', async () => {
           // Given
-          const file1 = new File(['content1'], 'photo.jpg', { type: 'image/jpeg' })
-          const file2 = new File(['content2'], 'photo.jpg', { type: 'image/jpeg' })
-          Object.defineProperty(file1, 'size', { value: 1024 })
-          Object.defineProperty(file2, 'size', { value: 1024 })
+          const file1 = new File(['content1'], 'photo.jpg', { type: 'image/jpeg' });
+          Object.defineProperty(file1, 'size', { value: 1024 });
+
+          const file2 = new File(['content2'], 'photo.jpg', { type: 'image/jpeg' });
+          Object.defineProperty(file2, 'size', { value: 1024 });
 
           (uuidv4 as jest.Mock)
             .mockReturnValueOnce('uuid-1')
-            .mockReturnValueOnce('uuid-2')
+            .mockReturnValueOnce('uuid-2');
 
           // When
-          await FileService.uploadMessageFile(mockUserId, mockConversationId, mockMessageId, file1)
-          await FileService.uploadMessageFile(mockUserId, mockConversationId, mockMessageId, file2)
+          await FileService.uploadMessageFile(mockUserId, mockConversationId, mockMessageId, file1);
+          await FileService.uploadMessageFile(mockUserId, mockConversationId, mockMessageId, file2);
 
           // Then
           expect(ref).toHaveBeenNthCalledWith(
             1,
             expect.anything(),
             `messages/${mockConversationId}/${mockMessageId}/uuid-1.jpg`
-          )
+          );
           expect(ref).toHaveBeenNthCalledWith(
             2,
             expect.anything(),
