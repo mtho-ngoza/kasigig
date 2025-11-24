@@ -17,7 +17,7 @@ describe('MessagingService - Authorization', () => {
       {
         userId: mockUser1Id,
         userName: 'User One',
-        userType: 'worker',
+        userType: 'job-seeker',
         joinedAt: new Date()
       },
       {

@@ -14,7 +14,7 @@ describe('ProfileService - Authorization', () => {
   const mockUser: User = {
     id: mockUserId,
     email: 'user@example.com',
-    userType: 'worker',
+    userType: 'job-seeker',
     firstName: 'John',
     lastName: 'Doe',
     phone: '+27123456789',
