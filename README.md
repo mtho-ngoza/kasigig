@@ -163,10 +163,10 @@ Empower all of Mzansi (South Africa) - from informal sector workers to professio
 ### Mobile & PWA Features
 - 📱 **Mobile Hamburger Menu**: Responsive slide-out navigation with smooth animations
 - 👆 **Enhanced Touch Interactions**: 44px touch targets with active state feedback
-- ⚡ **Progressive Web App**: PWA manifest and service worker for app installation
+- ⚡ **Progressive Web App**: PWA manifest with app shortcuts and install support
 - 📲 **Mobile-First Design**: Optimized responsive layouts for all screen sizes
 - 🎯 **Touch-Optimized UI**: Better mobile interactions with proper touch handling
-- 🔧 **Offline Support**: Basic caching and offline capabilities through service worker
+- 📱 **PWA Ready**: Installable app with standalone display mode and app shortcuts
 
 ### Advanced Features
 - 🔍 **Browse Talent**: Employers can search job seekers with advanced filters
