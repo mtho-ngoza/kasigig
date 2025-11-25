@@ -318,7 +318,7 @@ describe('GlobalHeader - Routing and Logout', () => {
   })
 
   describe('Auth Buttons for Non-Authenticated Users', () => {
-    it('should show auth buttons when showAuthButtons is true', () => {
+    it('should show auth buttons when showAuthButtons is true (desktop view)', () => {
       mockUseAuth.mockReturnValue({
         user: null,
         logout: mockLogout,
@@ -326,13 +326,19 @@ describe('GlobalHeader - Routing and Logout', () => {
         isAuthenticated: false
       } as any)
 
+      // Auth buttons are only visible on desktop (lg+ breakpoint)
+      // On mobile, users access auth through the hamburger menu
       render(<GlobalHeader showAuthButtons={true} />)
 
-      expect(screen.getByText('Log In')).toBeInTheDocument()
-      expect(screen.getByText('Sign Up')).toBeInTheDocument()
+      // Buttons exist in DOM but are hidden on mobile with lg:inline-flex
+      const loginButtons = screen.getAllByText('Log In')
+      const getStartedButton = screen.getByText('Get Started')
+
+      expect(loginButtons.length).toBeGreaterThan(0)
+      expect(getStartedButton).toBeInTheDocument()
     })
 
-    it('should navigate to auth page when clicking Log In', () => {
+    it('should navigate to auth page when clicking Log In (desktop)', () => {
       mockUseAuth.mockReturnValue({
         user: null,
         logout: mockLogout,
@@ -344,10 +350,15 @@ describe('GlobalHeader - Routing and Logout', () => {
 
       render(<GlobalHeader showAuthButtons={true} onNavigate={onNavigate} />)
 
-      const loginButton = screen.getByText('Log In')
-      fireEvent.click(loginButton)
+      // Get the desktop Log In button (there's also one in mobile menu)
+      const loginButtons = screen.getAllByText('Log In')
+      const desktopLoginButton = loginButtons.find(btn =>
+        btn.className.includes('hidden') && btn.className.includes('lg:inline-flex')
+      ) || loginButtons[0]
 
-      expect(onNavigate).toHaveBeenCalledWith('auth')
+      fireEvent.click(desktopLoginButton)
+
+      expect(onNavigate).toHaveBeenCalledWith('auth', 'login')
     })
   })
 })
