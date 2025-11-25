@@ -1,6 +1,7 @@
 'use client'
 
-import React, { useState, useEffect, useRef } from 'react'
+import React, { useState } from 'react'
+import { flushSync } from 'react-dom'
 import { useAuth } from '@/contexts/AuthContext'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
@@ -19,13 +20,9 @@ export function LoginForm({ onForgotPassword }: LoginFormProps = {}) {
     password: '',
   })
   const [errors, setErrors] = useState<Partial<LoginCredentials>>({})
-  // TODO: Error messages may not display consistently after login attempts
-  // Tests pass but issue persists in production - likely related to AuthContext redirect/unmount timing
-  // Need to investigate AuthContext login flow to ensure message displays before any navigation
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
   const [showProfileCompletion, setShowProfileCompletion] = useState(false)
   const [rememberMe, setRememberMe] = useState(true)
-
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target
@@ -83,24 +80,29 @@ export function LoginForm({ onForgotPassword }: LoginFormProps = {}) {
 
     const result = await login(sanitizedCredentials, rememberMe)
 
-    // Display result message directly
-    setMessage({
-      type: result.success ? 'success' : 'error',
-      text: result.message
+    // Use flushSync to force synchronous state update before any navigation
+    flushSync(() => {
+      setMessage({
+        type: result.success ? 'success' : 'error',
+        text: result.message
+      })
     })
   }
 
   const handleGoogleSignIn = async () => {
     setMessage(null)
+
     const result = await loginWithGoogle()
 
     if (result.success && result.needsProfileCompletion) {
       setShowProfileCompletion(true)
     } else {
-      // Display result message directly
-      setMessage({
-        type: result.success ? 'success' : 'error',
-        text: result.message
+      // Use flushSync to force synchronous state update before any navigation
+      flushSync(() => {
+        setMessage({
+          type: result.success ? 'success' : 'error',
+          text: result.message
+        })
       })
     }
   }
