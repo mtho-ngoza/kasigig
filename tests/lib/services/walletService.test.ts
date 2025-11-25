@@ -32,21 +32,28 @@ describe('WalletService', () => {
   })
 
   describe('creditWallet', () => {
+    const { runTransaction } = require('firebase/firestore')
+
     it('should initialize wallet fields when they do not exist', async () => {
       const amount = 500
       const mockUserData = { id: mockUserId, email: 'test@example.com' }
 
-      ;(getDoc as jest.Mock).mockResolvedValue({
-        exists: () => true,
-        data: () => mockUserData
+      const mockTransaction = {
+        get: jest.fn().mockResolvedValue({
+          exists: () => true,
+          data: () => mockUserData
+        }),
+        update: jest.fn()
+      }
+
+      ;(runTransaction as jest.Mock).mockImplementation(async (db, callback) => {
+        return await callback(mockTransaction)
       })
-      ;(updateDoc as jest.Mock).mockResolvedValue(undefined)
 
       await WalletService.creditWallet(mockUserId, amount)
 
-      expect(doc).toHaveBeenCalledWith(db, 'users', mockUserId)
-      expect(updateDoc).toHaveBeenCalledWith(
-        mockDocRef,
+      expect(mockTransaction.update).toHaveBeenCalledWith(
+        expect.anything(),
         expect.objectContaining({
           walletBalance: amount,
           pendingBalance: 0,
@@ -67,16 +74,22 @@ describe('WalletService', () => {
         totalWithdrawn: 0
       }
 
-      ;(getDoc as jest.Mock).mockResolvedValue({
-        exists: () => true,
-        data: () => mockUserData
+      const mockTransaction = {
+        get: jest.fn().mockResolvedValue({
+          exists: () => true,
+          data: () => mockUserData
+        }),
+        update: jest.fn()
+      }
+
+      ;(runTransaction as jest.Mock).mockImplementation(async (db, callback) => {
+        return await callback(mockTransaction)
       })
-      ;(updateDoc as jest.Mock).mockResolvedValue(undefined)
 
       await WalletService.creditWallet(mockUserId, amount)
 
-      expect(updateDoc).toHaveBeenCalledWith(
-        mockDocRef,
+      expect(mockTransaction.update).toHaveBeenCalledWith(
+        expect.anything(),
         expect.objectContaining({
           walletBalance: amount,
           totalEarnings: amount
@@ -85,19 +98,38 @@ describe('WalletService', () => {
     })
 
     it('should handle errors when user not found', async () => {
-      ;(getDoc as jest.Mock).mockResolvedValue({
-        exists: () => false
+      const mockTransaction = {
+        get: jest.fn().mockResolvedValue({
+          exists: () => false
+        }),
+        update: jest.fn()
+      }
+
+      ;(runTransaction as jest.Mock).mockImplementation(async (db, callback) => {
+        return await callback(mockTransaction)
       })
 
       await expect(WalletService.creditWallet(mockUserId, 500)).rejects.toThrow('User not found')
     })
 
     it('should handle errors when crediting wallet fails', async () => {
-      ;(getDoc as jest.Mock).mockResolvedValue({
-        exists: () => true,
-        data: () => ({ id: mockUserId, walletBalance: 100 })
+      const mockTransaction = {
+        get: jest.fn().mockResolvedValue({
+          exists: () => true,
+          data: () => ({ id: mockUserId, walletBalance: 100 })
+        }),
+        update: jest.fn().mockImplementation(() => {
+          throw new Error('Database error')
+        })
+      }
+
+      ;(runTransaction as jest.Mock).mockImplementation(async (db, callback) => {
+        try {
+          return await callback(mockTransaction)
+        } catch (error) {
+          throw error
+        }
       })
-      ;(updateDoc as jest.Mock).mockRejectedValue(new Error('Database error'))
 
       await expect(WalletService.creditWallet(mockUserId, 500)).rejects.toThrow('Database error')
     })
@@ -109,16 +141,22 @@ describe('WalletService', () => {
         walletBalance: 500
       }
 
-      ;(getDoc as jest.Mock).mockResolvedValue({
-        exists: () => true,
-        data: () => mockUserData
+      const mockTransaction = {
+        get: jest.fn().mockResolvedValue({
+          exists: () => true,
+          data: () => mockUserData
+        }),
+        update: jest.fn()
+      }
+
+      ;(runTransaction as jest.Mock).mockImplementation(async (db, callback) => {
+        return await callback(mockTransaction)
       })
-      ;(updateDoc as jest.Mock).mockResolvedValue(undefined)
 
       await WalletService.creditWallet(mockUserId, amount)
 
-      expect(updateDoc).toHaveBeenCalledWith(
-        mockDocRef,
+      expect(mockTransaction.update).toHaveBeenCalledWith(
+        expect.anything(),
         expect.objectContaining({
           walletBalance: amount,
           totalEarnings: amount
@@ -128,7 +166,9 @@ describe('WalletService', () => {
   })
 
   describe('debitWallet', () => {
-    it('should debit user wallet with specified amount', async () => {
+    const { runTransaction } = require('firebase/firestore')
+
+    it('should redirect to debitWalletAtomic and debit user wallet with specified amount', async () => {
       const amount = 200
       const mockUserData = {
         id: mockUserId,
@@ -142,16 +182,22 @@ describe('WalletService', () => {
         createdAt: new Date()
       }
 
-      ;(getDoc as jest.Mock).mockResolvedValue({
-        exists: () => true,
-        data: () => mockUserData
+      const mockTransaction = {
+        get: jest.fn().mockResolvedValue({
+          exists: () => true,
+          data: () => mockUserData
+        }),
+        update: jest.fn()
+      }
+
+      ;(runTransaction as jest.Mock).mockImplementation(async (db, callback) => {
+        return await callback(mockTransaction)
       })
-      ;(updateDoc as jest.Mock).mockResolvedValue(undefined)
 
       await WalletService.debitWallet(mockUserId, amount)
 
-      expect(updateDoc).toHaveBeenCalledWith(
-        mockDocRef,
+      expect(mockTransaction.update).toHaveBeenCalledWith(
+        expect.anything(),
         expect.objectContaining({
           walletBalance: -amount,
           totalWithdrawn: amount
@@ -160,8 +206,15 @@ describe('WalletService', () => {
     })
 
     it('should throw error if user not found', async () => {
-      ;(getDoc as jest.Mock).mockResolvedValue({
-        exists: () => false
+      const mockTransaction = {
+        get: jest.fn().mockResolvedValue({
+          exists: () => false
+        }),
+        update: jest.fn()
+      }
+
+      ;(runTransaction as jest.Mock).mockImplementation(async (db, callback) => {
+        return await callback(mockTransaction)
       })
 
       await expect(WalletService.debitWallet(mockUserId, 200)).rejects.toThrow('User not found')
@@ -180,9 +233,16 @@ describe('WalletService', () => {
         createdAt: new Date()
       }
 
-      ;(getDoc as jest.Mock).mockResolvedValue({
-        exists: () => true,
-        data: () => mockUserData
+      const mockTransaction = {
+        get: jest.fn().mockResolvedValue({
+          exists: () => true,
+          data: () => mockUserData
+        }),
+        update: jest.fn()
+      }
+
+      ;(runTransaction as jest.Mock).mockImplementation(async (db, callback) => {
+        return await callback(mockTransaction)
       })
 
       await expect(WalletService.debitWallet(mockUserId, 200)).rejects.toThrow('Insufficient balance')
@@ -201,9 +261,16 @@ describe('WalletService', () => {
         createdAt: new Date()
       }
 
-      ;(getDoc as jest.Mock).mockResolvedValue({
-        exists: () => true,
-        data: () => mockUserData
+      const mockTransaction = {
+        get: jest.fn().mockResolvedValue({
+          exists: () => true,
+          data: () => mockUserData
+        }),
+        update: jest.fn()
+      }
+
+      ;(runTransaction as jest.Mock).mockImplementation(async (db, callback) => {
+        return await callback(mockTransaction)
       })
 
       await expect(WalletService.debitWallet(mockUserId, 50)).rejects.toThrow('Insufficient balance')
@@ -346,20 +413,28 @@ describe('WalletService', () => {
   })
 
   describe('updatePendingBalance', () => {
+    const { runTransaction } = require('firebase/firestore')
+
     it('should initialize wallet fields when they do not exist', async () => {
       const amount = 1000
       const mockUserData = { id: mockUserId, email: 'test@example.com' }
 
-      ;(getDoc as jest.Mock).mockResolvedValue({
-        exists: () => true,
-        data: () => mockUserData
+      const mockTransaction = {
+        get: jest.fn().mockResolvedValue({
+          exists: () => true,
+          data: () => mockUserData
+        }),
+        update: jest.fn()
+      }
+
+      ;(runTransaction as jest.Mock).mockImplementation(async (db, callback) => {
+        return await callback(mockTransaction)
       })
-      ;(updateDoc as jest.Mock).mockResolvedValue(undefined)
 
       await WalletService.updatePendingBalance(mockUserId, amount)
 
-      expect(updateDoc).toHaveBeenCalledWith(
-        mockDocRef,
+      expect(mockTransaction.update).toHaveBeenCalledWith(
+        expect.anything(),
         expect.objectContaining({
           walletBalance: 0,
           pendingBalance: amount,
@@ -380,16 +455,22 @@ describe('WalletService', () => {
         totalWithdrawn: 0
       }
 
-      ;(getDoc as jest.Mock).mockResolvedValue({
-        exists: () => true,
-        data: () => mockUserData
+      const mockTransaction = {
+        get: jest.fn().mockResolvedValue({
+          exists: () => true,
+          data: () => mockUserData
+        }),
+        update: jest.fn()
+      }
+
+      ;(runTransaction as jest.Mock).mockImplementation(async (db, callback) => {
+        return await callback(mockTransaction)
       })
-      ;(updateDoc as jest.Mock).mockResolvedValue(undefined)
 
       await WalletService.updatePendingBalance(mockUserId, amount)
 
-      expect(updateDoc).toHaveBeenCalledWith(
-        mockDocRef,
+      expect(mockTransaction.update).toHaveBeenCalledWith(
+        expect.anything(),
         expect.objectContaining({
           pendingBalance: amount
         })
@@ -397,39 +478,67 @@ describe('WalletService', () => {
     })
 
     it('should handle errors when user not found', async () => {
-      ;(getDoc as jest.Mock).mockResolvedValue({
-        exists: () => false
+      const mockTransaction = {
+        get: jest.fn().mockResolvedValue({
+          exists: () => false
+        }),
+        update: jest.fn()
+      }
+
+      ;(runTransaction as jest.Mock).mockImplementation(async (db, callback) => {
+        return await callback(mockTransaction)
       })
 
       await expect(WalletService.updatePendingBalance(mockUserId, 1000)).rejects.toThrow('User not found')
     })
 
     it('should handle errors when updating pending balance fails', async () => {
-      ;(getDoc as jest.Mock).mockResolvedValue({
-        exists: () => true,
-        data: () => ({ id: mockUserId, pendingBalance: 100 })
+      const mockTransaction = {
+        get: jest.fn().mockResolvedValue({
+          exists: () => true,
+          data: () => ({ id: mockUserId, pendingBalance: 100 })
+        }),
+        update: jest.fn().mockImplementation(() => {
+          throw new Error('Database error')
+        })
+      }
+
+      ;(runTransaction as jest.Mock).mockImplementation(async (db, callback) => {
+        try {
+          return await callback(mockTransaction)
+        } catch (error) {
+          throw error
+        }
       })
-      ;(updateDoc as jest.Mock).mockRejectedValue(new Error('Database error'))
 
       await expect(WalletService.updatePendingBalance(mockUserId, 1000)).rejects.toThrow('Database error')
     })
   })
 
   describe('movePendingToWallet', () => {
+    const { runTransaction } = require('firebase/firestore')
+
     it('should initialize wallet fields when they do not exist', async () => {
       const amount = 800
-      const mockUserData = { id: mockUserId, email: 'test@example.com' }
+      // Include pendingBalance in the mockUserData to have sufficient balance to move
+      const mockUserData = { id: mockUserId, email: 'test@example.com', pendingBalance: 800 }
 
-      ;(getDoc as jest.Mock).mockResolvedValue({
-        exists: () => true,
-        data: () => mockUserData
+      const mockTransaction = {
+        get: jest.fn().mockResolvedValue({
+          exists: () => true,
+          data: () => mockUserData
+        }),
+        update: jest.fn()
+      }
+
+      ;(runTransaction as jest.Mock).mockImplementation(async (db, callback) => {
+        return await callback(mockTransaction)
       })
-      ;(updateDoc as jest.Mock).mockResolvedValue(undefined)
 
       await WalletService.movePendingToWallet(mockUserId, amount)
 
-      expect(updateDoc).toHaveBeenCalledWith(
-        mockDocRef,
+      expect(mockTransaction.update).toHaveBeenCalledWith(
+        expect.anything(),
         expect.objectContaining({
           walletBalance: amount,
           pendingBalance: 0,
@@ -450,16 +559,22 @@ describe('WalletService', () => {
         totalWithdrawn: 0
       }
 
-      ;(getDoc as jest.Mock).mockResolvedValue({
-        exists: () => true,
-        data: () => mockUserData
+      const mockTransaction = {
+        get: jest.fn().mockResolvedValue({
+          exists: () => true,
+          data: () => mockUserData
+        }),
+        update: jest.fn()
+      }
+
+      ;(runTransaction as jest.Mock).mockImplementation(async (db, callback) => {
+        return await callback(mockTransaction)
       })
-      ;(updateDoc as jest.Mock).mockResolvedValue(undefined)
 
       await WalletService.movePendingToWallet(mockUserId, amount)
 
-      expect(updateDoc).toHaveBeenCalledWith(
-        mockDocRef,
+      expect(mockTransaction.update).toHaveBeenCalledWith(
+        expect.anything(),
         expect.objectContaining({
           pendingBalance: -amount,
           walletBalance: amount,
@@ -469,19 +584,38 @@ describe('WalletService', () => {
     })
 
     it('should handle errors when user not found', async () => {
-      ;(getDoc as jest.Mock).mockResolvedValue({
-        exists: () => false
+      const mockTransaction = {
+        get: jest.fn().mockResolvedValue({
+          exists: () => false
+        }),
+        update: jest.fn()
+      }
+
+      ;(runTransaction as jest.Mock).mockImplementation(async (db, callback) => {
+        return await callback(mockTransaction)
       })
 
       await expect(WalletService.movePendingToWallet(mockUserId, 800)).rejects.toThrow('User not found')
     })
 
     it('should handle errors when moving pending to wallet fails', async () => {
-      ;(getDoc as jest.Mock).mockResolvedValue({
-        exists: () => true,
-        data: () => ({ id: mockUserId, walletBalance: 100, pendingBalance: 800 })
+      const mockTransaction = {
+        get: jest.fn().mockResolvedValue({
+          exists: () => true,
+          data: () => ({ id: mockUserId, walletBalance: 100, pendingBalance: 800 })
+        }),
+        update: jest.fn().mockImplementation(() => {
+          throw new Error('Database error')
+        })
+      }
+
+      ;(runTransaction as jest.Mock).mockImplementation(async (db, callback) => {
+        try {
+          return await callback(mockTransaction)
+        } catch (error) {
+          throw error
+        }
       })
-      ;(updateDoc as jest.Mock).mockRejectedValue(new Error('Database error'))
 
       await expect(WalletService.movePendingToWallet(mockUserId, 800)).rejects.toThrow('Database error')
     })
